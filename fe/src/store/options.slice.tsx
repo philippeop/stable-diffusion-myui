@@ -1,7 +1,7 @@
 'use client';
 import { createSlice } from "@reduxjs/toolkit";
+
 import { AppState } from "./store";
-import { HYDRATE } from "next-redux-wrapper";
 import { BaseMyUiOptions, ModelMyUiOptions, MyUiOptions, default_options } from '@common/models/option.models'
 
 // alias, i keep changing the names
@@ -125,17 +125,7 @@ export const optionsSlice = createSlice({
             state.seed = valid ? seed : -1; 
             saveBaseOptions(state) 
         }
-    },
-
-    // Special reducer for hydrating the state. Special case for next-redux-wrapper
-    extraReducers: {
-        [HYDRATE]: (state, action) => {
-            return {
-                ...state,
-                ...action.payload.auth,
-            };
-        },
-    },
+    }
 });
 
 export const {

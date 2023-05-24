@@ -8,10 +8,10 @@ import Actions from './actions';
 import { SdApi } from '@/services/sdapi.service';
 import { Embedding, Lora } from '@/common/models/sdapi.models';
 
-import config from './../../config.json' 
+import config from '../../config.json' 
 
-export default function Home() {
-    Logger.debug('Rendering Home')
+export default function App() {
+    Logger.debug('Rendering App')
 
     const [loras, setLoras] = useState<Lora[]>([])
     const [embeddings, setEmbeddings] = useState<Embedding[]>([])

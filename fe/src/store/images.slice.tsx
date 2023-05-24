@@ -1,5 +1,6 @@
 'use client';
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+
 import { Txt2ImgResult } from "@common/models/myapi.models";
 import { MyApi } from "@/services/myapi.service";
 
@@ -89,19 +90,18 @@ export const imagesSlice = createSlice({
             saveFilters(state)
         }
     },
-
-    extraReducers(/*builder*/) {
-        // builder
-        //     .addCase(refreshImages.pending, (state, action) => {
-        //         state.status = 'refreshing'
-        //     })
-        //     .addCase(refreshImages.fulfilled, (state, action) => {
-        //         state.status = 'done'
-        //     })
-        //     .addCase(refreshImages.rejected, (state, action) => {
-        //         state.status = 'error'
-        //     })
-    },
+    // extraReducers(builder) {
+    //     builder
+    //         .addCase(refreshImages.pending, (state, action) => {
+    //             state.status = 'refreshing'
+    //         })
+    //         .addCase(refreshImages.fulfilled, (state, action) => {
+    //             state.status = 'done'
+    //         })
+    //         .addCase(refreshImages.rejected, (state, action) => {
+    //             state.status = 'error'
+    //         })
+    // },
 });
 
 export const refreshImages = createAsyncThunk('images/refreshImages', async (args, thunkApi) => {

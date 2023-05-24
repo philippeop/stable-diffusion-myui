@@ -1,6 +1,7 @@
 'use client';
 import { createSlice } from "@reduxjs/toolkit";
 import moment from 'moment'
+
 import { Progress } from "./../common/models/sdapi.models";
 
 interface WorkerStore {
@@ -26,17 +27,7 @@ export const workerSlice = createSlice({
             }
             state.messages.push(`${moment().format('H:mm:ss')} - ${action.payload}`)
         }
-    },
-
-    // Special reducer for hydrating the state. Special case for next-redux-wrapper
-    // extraReducers: {
-    //     [HYDRATE]: (state, action) => {
-    //         return {
-    //             ...state,
-    //             ...action.payload.auth,
-    //         };
-    //     },
-    // },
+    }
 });
 
 export const {
