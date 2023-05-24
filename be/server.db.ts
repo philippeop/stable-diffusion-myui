@@ -45,11 +45,12 @@ export class MyUiDb {
 
     async loadAndUpgrade() {
         await this.load()
-        // for(const i of this.db.data.images) {
-        //     i.timestamp = i.original_info.job_timestamp
-        // }
-        // Logger.log('Upgraded', this.db.data.images.length, 'images')
-        // await this.save()
+        for(const i of this.db.data.images) {
+            delete i.options["last_sent"]
+            delete i.options["image_count"]
+        }
+        Logger.log('Upgraded', this.db.data.images.length, 'images')
+        await this.save()
     }
 
     async createImage(name: string, options: MyUiOptions, params: Txt2ImgParameters, info: string) {

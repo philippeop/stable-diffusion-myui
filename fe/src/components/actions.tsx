@@ -19,8 +19,9 @@ export default function Actions() {
 
     const submit = useCallback(() => {
         // if (working) return
-        console.log('prompting with following options:', options)
-        MyApi.txt2img(options).then(() => dispatch(setLastSend(options)) && dispatch(setWorking(true)))
+        const filteredOptions = { ... options, last_sent: undefined}
+        console.log('prompting with following options:', filteredOptions)
+        MyApi.txt2img(filteredOptions).then(() => dispatch(setLastSend(filteredOptions)) && dispatch(setWorking(true)))
     }, [dispatch, working, options])
 
     function skip() {
