@@ -21,7 +21,7 @@ export default function Gallery() {
     // const [ groupByBatch, setGroupByBatch ] = useState<boolean>(false)
     const promptFilter = useAppSelector((state) => state.images.promptFilter)
     const compareImage = useAppSelector((state) => state.images.compareWithImage)
-    const [deleteIdx, setDeleteIdx] = useState<number>()
+    const [deleteName, setDeleteName] = useState<string>()
     const models = [...new Set(allimages.map(i => i.options.model || ''))]
     const [isSlideshow, setIsSlideshow] = useState<boolean>(false)
     const timerHandle = useRef<NodeJS.Timer>()
@@ -58,9 +58,9 @@ export default function Gallery() {
 
     useEffect(() => {
         console.log('Rendering Gallery: deleteIdx effect')
-        const t = setTimeout(() => { setDeleteIdx(undefined) }, 2000)
+        const t = setTimeout(() => { setDeleteName(undefined) }, 2000)
         return () => clearTimeout(t)
-    }, [deleteIdx])
+    }, [deleteName])
 
 
     const onImageClicked = useCallback((image: Txt2ImgResult) => {
@@ -68,15 +68,15 @@ export default function Gallery() {
         dispatch(setSelectedImage(image))
     }, [dispatch])
 
-    const onDeleteClick = useCallback((image: Txt2ImgResult, idx: number) => {
-        if (deleteIdx == undefined) {
-            setDeleteIdx(idx)
+    const onDeleteClick = useCallback((image: Txt2ImgResult) => {
+        if (deleteName == undefined || deleteName !== image.name) {
+            setDeleteName(image.name)
             return
         }
         MyApi.deleteImage(image)
         dispatch(deleteImage(image))
-        setDeleteIdx(undefined)
-    }, [dispatch, deleteIdx])
+        setDeleteName(undefined)
+    }, [dispatch, deleteName])
 
     const modelFilterChanged = useCallback((event: FormEvent<HTMLSelectElement>) => {
         dispatch(setModelFilter(event.currentTarget.value))
@@ -114,7 +114,7 @@ export default function Gallery() {
             <div key={i.name} className={classes}>
                 {/* {groupByBatch && (<div className="batch-tag">{batchNumber}</div>)} */}
                 <img alt={i.name} src={'/myapi/img/' + i.name} onClick={() => onImageClicked(i)} />
-                <div className={idx == deleteIdx ? 'btn-del hot' : 'btn-del'} title={`Delete image.\nPress twice.`} onClick={() => onDeleteClick(i, idx)}></div>
+                <div className={i.name == deleteName ? 'btn-del hot' : 'btn-del'} title={`Delete image.\nPress twice.`} onClick={() => onDeleteClick(i)}></div>
             </div>
         )
     })
