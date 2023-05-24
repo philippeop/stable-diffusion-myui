@@ -1,0 +1,13 @@
+{
+	"tasks": [
+		{
+			"type": "npm",
+			"script": "build",
+			"path": "be",
+			"group": "build",
+			"problemMatcher": [],
+			"label": "npm: build - be",
+			"detail": "tsc --pretty"
+		}
+	]
+}
