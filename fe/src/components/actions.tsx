@@ -4,7 +4,7 @@ import { MyApi } from "../services/myapi.service";
 import { useAppDispatch, useAppSelector } from "../store/store";
 import { setWorking } from "../store/worker.slice";
 import classNames from "classnames";
-import { useEffect } from "react";
+import { setLastSend } from '@/store/options.slice';
 
 let id: NodeJS.Timer
 export default function Actions() {
@@ -17,7 +17,7 @@ export default function Actions() {
     function submit() {
         if(working) return
         console.log('prompting with following options:', options)
-        MyApi.txt2img(options).then(() => dispatch(setWorking(true)))
+        MyApi.txt2img(options).then(() => dispatch(setLastSend(options)) && dispatch(setWorking(true)))
     }
 
     useEffect(() => {

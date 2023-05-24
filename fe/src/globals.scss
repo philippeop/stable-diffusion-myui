@@ -317,6 +317,17 @@ body {
     }
 }
 
+.same {
+    color: #072;
+}
+.diff {
+    color: rgb(85, 27, 0)
+}
+
+input,textarea {
+    background-color: #eee;
+}
+
 /* custom element, scss only */
 .button {
     cursor: pointer;

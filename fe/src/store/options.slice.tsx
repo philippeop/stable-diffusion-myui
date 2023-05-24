@@ -13,6 +13,13 @@ const root_key = 'options';
 const base_key = `${root_key}_base`
 function makeKey(model: string) { return root_key + '_' + model }
 
+// copy(JSON.stringify(localStorage));
+// const importObj: { [key: string]: string} = ...
+// for(var key of Object.keys(importObj)) {
+//     const value = importObj[key]
+//     localStorage.setItem(key, value)
+// }
+
 export const loadBaseOptions = (): baseoptions => {
     if (typeof window === 'undefined') return default_options
     try {
@@ -80,8 +87,13 @@ export const saveModelOptions = (model: string | undefined, options: modeloption
     }
 };
 
+interface OptionStore extends MyUiOptions {
+    [key: string]: any;
+    last_sent?: options
+}
+
 // Actual Slice
-const defaultState: options = { 
+const defaultState: OptionStore = { 
     ...default_options,
     ...loadBaseOptions()
 }
@@ -89,6 +101,7 @@ export const optionsSlice = createSlice({
     name: root_key,
     initialState: defaultState,
     reducers: {
+        setLastSend(state, action) { state.last_sent = action.payload },
         setModel(state, action) {
             const loadedState = loadModelOptions(action.payload);
             state.model = action.payload
@@ -131,6 +144,7 @@ export const optionsSlice = createSlice({
 });
 
 export const {
+    setLastSend,
     setModel,
     setPrompt, setNegative,
     setCfgScale,
