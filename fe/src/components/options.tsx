@@ -131,9 +131,9 @@ export default function Options() {
                 </div >
                 <div className="col">
                     <label htmlFor="image_width">Width:</label>
-                    <input type="number" id="image_width" value={image_width} onChange={event => { dispatch(setImageWidth(+event.target.value)) }} min="100" max="10000" step="10" />
+                    <input type="number" id="image_width" className={sameClass(image_width, last_sent?.image_width)} value={image_width} onChange={event => { dispatch(setImageWidth(+event.target.value)) }} min="100" max="10000" step="10" />
                     <label htmlFor="image_height">Height:</label>
-                    <input type="number" id="image_height" value={image_height} onChange={event => { dispatch(setImageHeight(+event.target.value)) }} min="100" max="10000" step="10" />
+                    <input type="number" id="image_height" className={sameClass(image_height, last_sent?.image_height)} value={image_height} onChange={event => { dispatch(setImageHeight(+event.target.value)) }} min="100" max="10000" step="10" />
                     <label htmlFor="seed">Seed:</label>
                     <OptionInput id="seed" type="number?" classNameExtra={sameClass(seed, last_sent?.seed)} value={seed} dimOnEmpty={true} onChange={(value) => dispatch(setSeed(value))} />
                     <label htmlFor="restore_faces">Restore faces:</label>
