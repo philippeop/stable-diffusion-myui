@@ -35,14 +35,13 @@ export default function Actions() {
     }, [working])
 
     const classesSubmit = classNames({
-        'button': true,
-        'working': working
+        'button': true
     })
 
     const classesSkip = classNames({
         'button': true,
-        'skip': true,
-        'working': working,
+        'positive': working,
+        'negative': !working,
     })
 
     return (
@@ -51,7 +50,9 @@ export default function Actions() {
                 <div className={classesSubmit} onClick={submit}>Submit</div>
                 <div className={classesSkip} onClick={skip}>Skip</div>
             </div>
-            {messages.slice().reverse().map((m) => <div key={m}>{m}</div>)}
+            <div className="log">
+                {messages.slice().map((m) => <div key={m}>{m}</div>)}
+            </div>
         </div>
     )
 }
