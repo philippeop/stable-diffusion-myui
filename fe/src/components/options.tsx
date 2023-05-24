@@ -94,11 +94,14 @@ export default function Options() {
 
     const loadPrompt = useCallback(async () => {
         const clipb = await navigator.clipboard.readText()
-        const { success, prompt, negative, cfg } = parsePrompt(clipb)
+        const { success, prompt, negative, seed, cfg, width, height } = parsePrompt(clipb)
         if (!success) return
         dispatch(setPrompt(prompt))
         dispatch(setNegative(negative))
+        if(seed) dispatch(setSeed(+seed))
         dispatch(setCfgScale(cfg))
+        dispatch(setImageWidth(width))
+        dispatch(setImageHeight(height))
     }, [dispatch])
 
     const loadBaseline = useCallback(async () => {
@@ -190,9 +193,13 @@ const parsePrompt = (input: string) => {
     try {
         let splitPart = input.split('Negative prompt: ')
         const prompt = splitPart[0]
-        const negative = splitPart[1].split('Size: ')[0]
-        const cfg = /^.* CFG scale\: ([0-9.[0-0])\,/g.exec(input)?.[0]
-        return { success: true, prompt, negative, cfg }
+        const negative = splitPart[1].split('\n')[0]
+        const seed = /^.* Seed\: ([0-9]+),/gm.exec(input)?.[1]
+        const cfg = /^.* CFG scale\: ([0-9].?[0-9]?),/gm.exec(input)?.[1]
+        const sizeRes = /^.* Size\: ([0-9]+)x([0-9]+),/gm.exec(input)
+        const width = sizeRes?.[1]
+        const height = sizeRes?.[2]
+        return { success: true, prompt, negative, seed, cfg, width, height }
     }
     catch {
         return { success: false } ///

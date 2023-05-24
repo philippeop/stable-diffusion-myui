@@ -14,11 +14,13 @@ const base_key = `${root_key}_base`
 function makeKey(model: string) { return root_key + '_' + model }
 
 // copy(JSON.stringify(localStorage));
-// const importObj: { [key: string]: string} = ...
-// for(var key of Object.keys(importObj)) {
-//     const value = importObj[key]
-//     localStorage.setItem(key, value)
-// }
+/*
+ const importObj: { [key: string]: string} = 
+for(var key of Object.keys(importObj)) {
+    const value = importObj[key]
+    localStorage.setItem(key, value)
+}
+*/
 
 export const loadBaseOptions = (): baseoptions => {
     if (typeof window === 'undefined') return default_options
