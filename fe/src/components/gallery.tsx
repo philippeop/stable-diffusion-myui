@@ -8,6 +8,8 @@ import { Txt2ImgResult } from '@common/models/myapi.models'
 import Spotlight from './spotlight'
 import { useAppDispatch, useAppSelector } from '../store/store'
 import { deleteImage, setSelectedImage, setModelFilter, setNewestFirst, selectNext, setPromptFilter, refreshImages } from '../store/images.slice'
+import { SdApi } from '@/services/sdapi.service';
+import { Model } from '@/common/models/sdapi.models';
 
 export default function Gallery() {
     Logger.debug('Rendering Gallery')
@@ -21,9 +23,9 @@ export default function Gallery() {
     // const [ groupByBatch, setGroupByBatch ] = useState<boolean>(false)
     const promptFilter = useAppSelector((state) => state.images.promptFilter)
     const compareImage = useAppSelector((state) => state.images.compareWithImage)
-    const models = [...new Set(allimages.map(i => i.options.model || ''))]
     const [isSlideshow, setIsSlideshow] = useState<boolean>(false)
     const timerHandle = useRef<NodeJS.Timer>()
+    const [models, setModels] = useState<Model[]>([])
     // Logger.debug('Rendering Gallery: slideshowIndex', slideshowIndex)
     // Logger.debug('Rendering Gallery: modelFilter', modelFilter)
     // Logger.debug('Rendering Gallery: newestFirst', newestFirst)
@@ -31,6 +33,23 @@ export default function Gallery() {
     // Logger.debug('Rendering Gallery: images count', images.length)
     // Logger.debug('Rendering Gallery: filteredImages count', filteredImages.length)
     // Logger.debug('Rendering Gallery: selectedImage is', selectedImage?.name)
+
+
+    useEffect(() => {
+        (async () => {
+            const allModels = await SdApi.getModels()
+            if(!allModels) return
+            const modelsWithImages = allModels
+            .filter(m => { 
+                const count = allimages.filter(i => i.options.model === m.model_name).length
+                m.title = m.title + ' (' + count + ')'
+                return count !== 0
+            })
+            .sort((a, b) => a.title.localeCompare(b.title))
+            
+            setModels(modelsWithImages)
+        })()
+    }, [allimages])
 
     useEffect(() => {
         if (isSlideshow) {
@@ -123,7 +142,7 @@ export default function Gallery() {
                     <label htmlFor="model_select">Filter by model:</label>
                     <select id="model_select" value={modelFilter} onChange={modelFilterChanged}>
                         <option key="All" value="all">All</option>
-                        {models.map(m => <option key={m} value={m}>{m}</option>)}
+                        {models.map(m => <option key={m.hash} value={m.model_name}>{m.title.replace('.safetensors', '')}</option>)}
                     </select>
                 </div>
                 <div>
