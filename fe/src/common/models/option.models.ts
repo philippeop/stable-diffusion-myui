@@ -5,7 +5,8 @@ export interface BaseMyUiOptions {
     image_height: number
     batches?: number
     /** SEED INPUT NOT RESULT SEED */
-    seed: string
+    seed: number
+    ensd: number
     restore_faces: boolean
 }
 
@@ -41,7 +42,8 @@ export const default_options: MyUiOptions = {
     image_height: 512,
     batches: 1,
     clip_skip: 1,
-    seed: '-1',
+    seed: -1,
+    ensd: 0,
     restore_faces: false
 }
 export interface SdApiOptions {

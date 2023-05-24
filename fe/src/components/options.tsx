@@ -7,7 +7,7 @@ import { useAppDispatch, useAppSelector } from '../store/store';
 import {
     setModel, setPrompt, setNegative, setCfgScale,
     setUpscaler, setUpscalerScale, setUpscalerSteps, setUpscalerDenoise,
-    setSampler, setSteps, setImageWidth, setImageHeight, setBatches, setClipSkip, setSeed, setRestoreFaces
+    setSampler, setSteps, setImageWidth, setImageHeight, setBatches, setClipSkip, setSeed, setRestoreFaces, setEnsd
 } from '../store/options.slice'
 import OptionInput from './optioninput';
 import Button from './button';
@@ -33,6 +33,7 @@ export default function Options() {
     const steps = useAppSelector((state) => state.options.steps)
     const clip_skip = useAppSelector((state) => state.options.clip_skip)
     const seed = useAppSelector((state) => state.options.seed)
+    const ensd = useAppSelector((state) => state.options.ensd)
     const restore_faces = useAppSelector((state) => state.options.restore_faces)
     const upscaler = useAppSelector((state) => state.options.upscaler ?? "None")
     const upscaler_scale = useAppSelector((state) => state.options.upscaler_scale)
@@ -135,9 +136,8 @@ export default function Options() {
                     <label htmlFor="image_height">Height:</label>
                     <input type="number" id="image_height" className={sameClass(image_height, last_sent?.image_height)} value={image_height} onChange={event => { dispatch(setImageHeight(+event.target.value)) }} min="100" max="10000" step="10" />
                     <label htmlFor="seed">Seed:</label>
-                    <OptionInput id="seed" type="number?" classNameExtra={sameClass(seed, last_sent?.seed)} value={seed} dimOnEmpty={true} onChange={(value) => dispatch(setSeed(value))} />
-                    <label htmlFor="restore_faces">Restore faces:</label>
-                    <input type="checkbox" id="restore_faces" checked={restore_faces} onChange={event => { dispatch(setRestoreFaces(event.currentTarget.checked)) }} />
+                    <OptionInput id="seed" type="number?" classNameExtra={sameClass(seed, last_sent?.seed)} value={seed} emptyValue={-1} dimOnEmpty={true} onChange={(value) => dispatch(setSeed(value))} />
+                    <OptionInput id="ensd" type="number?" classNameExtra={sameClass(ensd, last_sent?.ensd)} value={ensd} emptyValue={0} dimOnEmpty={true} onChange={(value) => dispatch(setEnsd(value))} />
                 </div>
                 <div className="col">
                     <label htmlFor="sample_select">Sampler:</label>
@@ -148,6 +148,8 @@ export default function Options() {
                     <input type="number" id="steps_input" className={sameClass(steps, last_sent?.steps)} value={steps} onChange={event => { dispatch(setSteps(+event.target.value)) }} min="5" max="50" />
                     <label htmlFor="clip_skip_input">CLIP Skip</label>
                     <input type="number" id="clip_skip_input" className={sameClass(clip_skip, last_sent?.clip_skip)} value={clip_skip} onChange={event => { dispatch(setClipSkip(+event.target.value)) }} min="1" max="5" />
+                    <label htmlFor="restore_faces">Restore faces:</label>
+                    <input type="checkbox" id="restore_faces" checked={restore_faces} onChange={event => { dispatch(setRestoreFaces(event.currentTarget.checked)) }} />
                 </div >
                 <div className="col">
                     <label htmlFor="upscaler_select">Upscaler:</label>

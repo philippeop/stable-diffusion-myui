@@ -20,7 +20,6 @@ export default function Spotlight() {
     const otherImage = useAppSelector(s => s.images.compareWithImage)
     const prompt = useAppSelector(s => s.options.prompt)
     const negative = useAppSelector(s => s.options.negative)
-    const seedOnUi = useAppSelector(s => s.options.seed)
 
     useEffect(() => {
         Logger.debug('Spotlight selectedImage changed to', image?.name)
@@ -108,7 +107,8 @@ export default function Spotlight() {
         )
     }
 
-    const sameSeed = image.seed.toString() === seedOnUi.toString()
+    const sameSeed = image.seed.toString() === currentOptions.seed.toString()
+    const sameEnsd = image.options.ensd === currentOptions.ensd
 
     return (
         <div className='spotlight-overlay'>
@@ -125,8 +125,10 @@ export default function Spotlight() {
                 </div>
                 {...fields}
                 <div onClick={() => loadSeed(image.seed) } className='info-line'>
-                    <span className='key'>Seed:</span>{image.seed}
-                    { sameSeed && <span className="positive"> (Same)</span> }
+                    <span className="key">Seed:</span><span className={sameSeed ? 'same' : 'diff'}>{image.seed}</span>
+                </div>
+                <div className='info-line'>
+                    <span className="key">ENSD:</span><span className={sameEnsd ? 'same' : 'diff'}>{image.options.ensd}</span>
                 </div>
                 <div className="compare-controls row">
                     <ClickTwiceButton styleIdle='positive' styleHot='negative' onClickTwice={() => onDeleteBtnClick()}>

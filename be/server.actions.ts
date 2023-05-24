@@ -186,8 +186,11 @@ export class Actions {
         request.styles = []
         request.batch_size = 1
         request.n_iter = options.batches || 1
-        request.enable_hr = !!options.upscaler
-        request.override_settings = { 'CLIP_stop_at_last_layers': options.clip_skip }
+        request.enable_hr = !!options.upscaler && options.upscaler !== 'None'
+        request.override_settings = {
+            'CLIP_stop_at_last_layers': options.clip_skip,
+            'eta_noise_seed_delta': options.ensd ?? 0
+        }
         if (options.upscaler) {
             request.hr_upscaler = options.upscaler
             request.hr_scale = options.upscaler_scale

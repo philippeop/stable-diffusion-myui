@@ -54,6 +54,7 @@ export const saveBaseOptions = (options: baseoptions) => {
             image_width: options.image_width,
             batches: options.batches,
             seed: options.seed,
+            ensd: options.ensd,
             restore_faces: options.restore_faces,
         }
         const baseJson = JSON.stringify(baseOptions);
@@ -137,6 +138,7 @@ export const optionsSlice = createSlice({
             state.seed = valid ? seed : -1; 
             saveBaseOptions(state) 
         },
+        setEnsd(state, action) { state.ensd = +action.payload; saveBaseOptions(state) },
         setRestoreFaces(state, action) { state.restore_faces = !!action.payload; saveBaseOptions(state) }
     }
 });
@@ -155,7 +157,8 @@ export const {
     setImageWidth, setImageHeight,
     setBatches,
     setClipSkip,
-    setSeed, setRestoreFaces,
+    setSeed, setEnsd, 
+    setRestoreFaces,
 } = optionsSlice.actions
 
 export const selectOptionsState = (state: AppState) => state.options;
