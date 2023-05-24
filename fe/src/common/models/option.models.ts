@@ -4,7 +4,6 @@ export interface BaseMyUiOptions {
     image_width: number
     image_height: number
     batches?: number
-    image_count?: number
     /** SEED INPUT NOT RESULT SEED */
     seed: string
     restore_faces: boolean
@@ -41,7 +40,6 @@ export const default_options: MyUiOptions = {
     image_width: 512,
     image_height: 512,
     batches: 1,
-    image_count: 1,
     clip_skip: 1,
     seed: '-1',
     restore_faces: false

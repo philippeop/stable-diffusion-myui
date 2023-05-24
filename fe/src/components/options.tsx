@@ -26,7 +26,6 @@ export default function Options() {
 
     const cfg_scale = useAppSelector((state) => state.options.cfg_scale)
     const batches = useAppSelector((state) => state.options.batches)
-    const image_count = useAppSelector((state) => state.options.image_count)
     const image_width = useAppSelector((state) => state.options.image_width)
     const image_height = useAppSelector((state) => state.options.image_height)
     const sampler = useAppSelector((state) => state.options.sampler)
@@ -107,8 +106,6 @@ export default function Options() {
                     </select>
                     <label htmlFor="batches">Batches</label>
                     <input type="number" id="batches" value={batches} onChange={event => { dispatch(setBatches(+event.target.value)) }} min="1" max="100" />
-                    <label htmlFor="image_count">Image Count</label>
-                    <input type="number" id="image_count" value={image_count} onChange={event => { dispatch(setImageCount(+event.target.value)) }} min="1" max="100" />
                     <label htmlFor="cfg_scale" title={cfg_scale_title} > CFG Scale</label >
                     <input type="number" id="cfg_scale" className={sameClass(cfg_scale, last_sent?.cfg_scale)} value={cfg_scale} onChange={event => { dispatch(setCfgScale(+event.target.value)) }} min="1" max="100" />
                 </div >

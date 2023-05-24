@@ -52,7 +52,6 @@ export const saveBaseOptions = (options: baseoptions) => {
             model: options.model,
             image_height: options.image_height,
             image_width: options.image_width,
-            image_count: options.image_count,
             batches: options.batches,
             seed: options.seed,
             restore_faces: options.restore_faces,
@@ -130,7 +129,6 @@ export const optionsSlice = createSlice({
         setImageWidth(state, action) { state.image_width = action.payload; saveBaseOptions(state) },
         setImageHeight(state, action) { state.image_height = action.payload; saveBaseOptions(state) },
         setBatches(state, action) { state.batches = action.payload; saveBaseOptions(state) },
-        setImageCount(state, action) { state.image_count = action.payload; saveBaseOptions(state) },
         setClipSkip(state, action) { state.clip_skip = action.payload; saveModelOptions(state.model, state) },
         setSeed(state, action) { 
             console.log('action.payload', action.payload)
@@ -155,7 +153,7 @@ export const {
     setSampler,
     setSteps,
     setImageWidth, setImageHeight,
-    setBatches, setImageCount,
+    setBatches,
     setClipSkip,
     setSeed, setRestoreFaces,
 } = optionsSlice.actions

@@ -37,11 +37,11 @@ export class Actions {
         res.status(200).send()
 
         this.worker.addTask(() => this.handleTxt2ImgAction(options))
-        this.msgg.sendNotice(`Queued prompt, ${this.worker.running ? 'working, ' : 'idle, '}${this.worker.tasks.length} in queue`)
+        this.msgg.sendNotice(`Queued prompt, ${this.worker.running ? 'working' : 'idle'}, ${this.worker.tasks.length} in queue`)
     }
 
     private handleTxt2ImgAction = async (options: MyUiOptions) => {
-        this.msgg.sendNotice(`Started, doing ${options.batches}x${options.image_count} generations`)
+        this.msgg.sendNotice(`Started, doing ${options.batches} generations`)
         const batches = options.batches ?? 1
         options.batches = 1
         const payload = this.optionsToRequest(options)
@@ -151,7 +151,7 @@ export class Actions {
         request.restore_faces = options.restore_faces
         request.tiling = false
         request.styles = []
-        request.batch_size = options.image_count || 1
+        request.batch_size = 1
         request.n_iter = options.batches || 1
         request.enable_hr = !!options.upscaler
         request.override_settings = { 'CLIP_stop_at_last_layers': options.clip_skip }
