@@ -139,12 +139,12 @@ export default function Spotlight() {
         <div className='spotlight-overlay' onClick={onClick}>
             <div className='info'>
                 <div className="prompt-container" onClick={() => loadPrompt(image.options.prompt)}>
-                    {parsePrompt(image.options.prompt).map((s) => <Pill key={s}>{s}</Pill>)}
+                    {parsePrompt(image.options.prompt).map((s, i) => <Pill key={i}>{s}</Pill>)}
                     {/* <div>{image.options.prompt}</div> */}
                     { image.options.prompt === prompt && <div className="positive">(Same)</div> }
                 </div>
                 <div className="negative-container" onClick={() => loadNegative(image.options.negative)}>
-                    {parsePrompt(image.options.negative).map((s) => <Pill key={s} negative={true}>{s}</Pill>)}
+                    {parsePrompt(image.options.negative).map((s, i) => <Pill key={i} negative={true}>{s}</Pill>)}
                     {/* <div>{image.options.negative}</div> */}
                     { image.options.negative === negative && <div className="positive">(Same)</div> }
                 </div>
@@ -185,7 +185,6 @@ function parsePrompt(prompt: string): string[] {
         currentToken += c
     }
     if (currentToken) tokens.push(currentToken)
-    Logger.log(prompt, 'equals', tokens)
     return tokens;
 }
 

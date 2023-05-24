@@ -26,14 +26,6 @@ export default function Gallery() {
     const [isSlideshow, setIsSlideshow] = useState<boolean>(false)
     const timerHandle = useRef<NodeJS.Timer>()
     const [models, setModels] = useState<Model[]>([])
-    // Logger.debug('Rendering Gallery: slideshowIndex', slideshowIndex)
-    // Logger.debug('Rendering Gallery: modelFilter', modelFilter)
-    // Logger.debug('Rendering Gallery: newestFirst', newestFirst)
-    // Logger.debug('Rendering Gallery: deleteIdx', deleteIdx)
-    // Logger.debug('Rendering Gallery: images count', images.length)
-    // Logger.debug('Rendering Gallery: filteredImages count', filteredImages.length)
-    // Logger.debug('Rendering Gallery: selectedImage is', selectedImage?.name)
-
 
     useEffect(() => {
         (async () => {
@@ -79,16 +71,18 @@ export default function Gallery() {
         dispatch(setSelectedImage(image))
     }, [dispatch])
 
+    const timer = useRef<NodeJS.Timeout>()
     const [deleteName, setDeleteName] = useState<string>()
     const onDeleteClick = useCallback((image: Txt2ImgResult) => {
         if(deleteName && deleteName !== image.name) {
             return
         }
         if (deleteName == undefined) {
-            const t = setTimeout(() => { setDeleteName(undefined) }, 2000)
+            timer.current = setTimeout(() => { setDeleteName(undefined) }, 2000)
             setDeleteName(image.name)
-            return () => clearTimeout(t)
+            return () => clearTimeout(timer.current)
         }
+        clearTimeout(timer.current)
         MyApi.deleteImage(image)
         dispatch(deleteImage(image))
         setDeleteName(undefined)
@@ -142,7 +136,7 @@ export default function Gallery() {
                     <label htmlFor="model_select">Filter by model:</label>
                     <select id="model_select" value={modelFilter} onChange={modelFilterChanged}>
                         <option key="All" value="all">All</option>
-                        {models.map(m => <option key={m.hash} value={m.model_name}>{m.title.replace('.safetensors', '')}</option>)}
+                        {models.map(m => <option key={m.filename} value={m.model_name}>{m.title.replace('.safetensors', '')}</option>)}
                     </select>
                 </div>
                 <div>
