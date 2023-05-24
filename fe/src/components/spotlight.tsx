@@ -102,14 +102,14 @@ export default function Spotlight() {
         { key: 'model', label: 'Model' },
         { key: 'prompt', label: 'Prompt', skip: true },
         { key: 'negative', label: 'Negative', skip: true },
-        { key: 'cfg_scale', label: 'CFG Scale' },
-        { key: 'steps', label: 'Steps' },
         { key: 'size', label: 'Size', getter: imageSizeString },
         { key: 'sampler', label: 'Sampler' },
+        { key: 'steps', label: '> Steps' },
         { key: 'upscaler', label: 'Upscaler' },
-        { key: 'upscaler_steps', label: ' > Upscaler steps' },
-        { key: 'upscaler_scale', label: ' > Upscaler scale' },
-        { key: 'upscaler_denoise', label: ' > Upscaler denoise' },
+        { key: 'upscaler_scale', label: '> Upscaler scale' },
+        { key: 'upscaler_steps', label: '> Upscaler steps' },
+        { key: 'upscaler_denoise', label: '> Upscaler denoise' },
+        { key: 'cfg_scale', label: 'CFG Scale' },
         { key: 'clip_skip', label: 'CLIP skip' },
         //{ key: 'timestamp', label: 'Generated', getter: i => i.timestamp },
         { key: 'generated', label: 'Generated', getter: i => moment(i.timestamp, 'YYYYMMDDHHmmss').format('YYYY-MM-DD H:mm:ss') },
@@ -125,6 +125,8 @@ export default function Spotlight() {
             </div>
         )
     }
+
+    const sameSeed = image.seed.toString() === seedOnUi.toString()
 
     return (
         <div className='spotlight-overlay' onClick={onClick}>
@@ -142,7 +144,7 @@ export default function Spotlight() {
                 {...fields}
                 <div onClick={() => loadSeed(image.seed) } className='info-line'>
                     <span className='key'>Seed:</span>{image.seed}
-                    { image.seed.toString() === seedOnUi && <span className="positive"> (Same)</span> }
+                    { sameSeed && <span className="positive"> (Same)</span> }
                 </div>
                 <div className="compare-controls row">
                     <Button onClick={() => dispatch(setCompareWithImage(image))}>Stash image as compare image</Button>

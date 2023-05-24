@@ -91,7 +91,6 @@ export default function Options() {
 
     const prompt_rows = 6
 
-    const seedDisplay = seed ?? ''
     return (
         <fieldset className="options-container" disabled={disableModelSelect}>
             { !models && !samplers && <h3>Web UI API appears to be unavailable</h3>}
@@ -117,7 +116,7 @@ export default function Options() {
                     <label htmlFor="image_height">Height:</label>
                     <input type="number" id="image_height" value={image_height} onChange={event => { dispatch(setImageHeight(+event.target.value)) }} min="100" max="10000" step="10" />
                     <label htmlFor="seed">Seed:</label>
-                    <OptionInput id="seed" type="number?" value={seedDisplay} dimOnEmpty={true} onChange={(value) => dispatch(setSeed(value))} />
+                    <OptionInput id="seed" type="number?" value={seed} dimOnEmpty={true} onChange={(value) => dispatch(setSeed(value))} />
                 </div>
                 <div className="col">
                     <label htmlFor="sample_select">Sampler:</label>

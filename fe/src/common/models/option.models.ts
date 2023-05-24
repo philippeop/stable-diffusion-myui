@@ -114,6 +114,7 @@ export interface SdApiOptions {
     training_enable_tensorboard: boolean
     training_tensorboard_save_images: boolean
     training_tensorboard_flush_every: number
+    /** TITLE of the model */
     sd_model_checkpoint: string
     sd_checkpoint_cache: number
     sd_vae_checkpoint_cache: number

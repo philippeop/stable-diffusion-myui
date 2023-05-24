@@ -25,17 +25,16 @@ export default function OptionInput(props: OptionInputProps) {
         onChange(value)
     }, [onChange])
 
-    //const finalValue = isValid(value, type) ? value : getDefault(type)
-    
-    const empty = dimOnEmpty && value === ''
+    const finalValue = isValid(value, type) ? value : getDefault(type)
+    const empty = dimOnEmpty && value === -1
     Logger.log('value is', value, empty)
     const classes = classNames({
         'option-input': true,
-        // 'dimmed': dimOnEmpty && empty
+        'dimmed': dimOnEmpty && empty
     })
     Logger.log(classes)
     return (
-        <input type="text" id={id} className={classes} value={value} onInput={internalOnInput}></input>
+        <input type="text" id={id} className={classes} value={value === -1 ? '' : value} onInput={internalOnInput}></input>
     )
 }
 

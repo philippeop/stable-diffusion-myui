@@ -90,19 +90,19 @@ export const optionsSlice = createSlice({
     reducers: {
         setModel(state, action) {
             const loadedState = loadModelOptions(action.payload);
-            return { ...state, model: action.payload, ...loadedState}
-            // state.model = action.payload.model_name
-            // state.prompt = loadedState.prompt
-            // state.negative = loadedState.negative
-            // state.cfg_scale = loadedState.cfg_scale
-            // state.upscaler = loadedState.upscaler
-            // state.upscaler_scale = loadedState.upscaler_scale
-            // state.upscaler_steps = loadedState.upscaler_steps
-            // state.upscaler_denoise = loadedState.upscaler_denoise
-            // state.sampler = loadedState.sampler
-            // state.steps = loadedState.steps
-            // state.clip_skip = loadedState.clip_skip
-            // saveBaseOptions(state)
+            state.model = action.payload
+            state.prompt = loadedState.prompt
+            state.negative = loadedState.negative
+            state.cfg_scale = loadedState.cfg_scale
+            state.upscaler = loadedState.upscaler
+            state.upscaler_scale = loadedState.upscaler_scale
+            state.upscaler_steps = loadedState.upscaler_steps
+            state.upscaler_denoise = loadedState.upscaler_denoise
+            state.sampler = loadedState.sampler
+            state.steps = loadedState.steps
+            state.clip_skip = loadedState.clip_skip
+            saveBaseOptions(state)
+            return state
         },
         setPrompt(state, action) { state.prompt = action.payload; saveModelOptions(state.model, state) },
         setNegative(state, action) { state.negative = action.payload; saveModelOptions(state.model, state) },

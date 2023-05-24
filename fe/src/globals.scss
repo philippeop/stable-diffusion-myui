@@ -121,6 +121,7 @@ body {
     border-left: $divider;
 
     .options {
+        gap: 1em;
         @media (max-width: 1300px) {
             flex-direction: column;
         }
