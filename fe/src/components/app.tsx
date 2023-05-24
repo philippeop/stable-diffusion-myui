@@ -33,7 +33,7 @@ export default function App() {
 
     const loraElements = loras.map(l => {
         const label = l.name === l.alias ? l.name : `${l.name} (alias: ${l.alias})`
-        const loraDef = config.lora_triggers.find(t => t.name === l.name)
+        const loraDef = config.lora_definitions.find(t => t.name === l.name)
         let title = ''
         if (loraDef) {
             title = (loraDef.comment ? (loraDef.comment + '\n') : '') + loraDef.keywords.join(', ')

@@ -4,12 +4,12 @@ import moment from 'moment';
 
 import { Txt2ImgResult } from '@common/models/myapi.models'
 import { Logger } from '@common/logger';
+import { MyApi } from '@/services/myapi.service';
 import { useAppDispatch, useAppSelector } from '../store/store'
 import { deleteImage, selectNext, selectPrevious, setCompareWithImage, setSelectedImage, swapImages } from '../store/images.slice'
 import { setSeed } from '../store/options.slice'
 import Pill from './pill'
 import Button from './button';
-import { MyApi } from '@/services/myapi.service';
 import { ClickTwiceButton } from './clicktwice';
 
 export default function Spotlight() {

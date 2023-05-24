@@ -1,0 +1,17 @@
+{
+    "lora_definitions": [
+        {
+            "name": "name",
+            "keywords": [ "my_keyword", "other_keyword" ],
+            "link": "https://...",
+            "comment": "I.e 'Use 0.2-0.4 for best results'"
+        }
+    ],
+    "pill_keyword_categories": {
+        "nsfw": [ "nsfw" ],
+        "mild": [ "butt" ],
+        "quality_good": [ "masterwork", "masterpiece", "realistic", "photorealistic", "high resolution", "best quality", "high quality", "highly detailed", "intricate details", "perfect", "sharp focus", "intricate", "cinematic lighting" ],
+        "quality_bad": [ "worst quality", "low quality", "blurry", "ugly", "bad anatomy", "disfigured", "deformed", "mutation", "extra limbs", "text", "watermark" ],
+        "typos": [ "photrealistic" ]
+    }
+}
