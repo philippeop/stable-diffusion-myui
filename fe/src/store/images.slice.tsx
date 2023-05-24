@@ -72,6 +72,7 @@ export const imagesSlice = createSlice({
             const image = action.payload;
             state.list = state.list.filter(i => i.name !== image.name)
             state.filteredList = state.filteredList.filter(i => i.name !== image.name)
+            if(state.selectedImage?.name === image.name) state.selectedImage = undefined
         },
 
         setModelFilter(state, action) {

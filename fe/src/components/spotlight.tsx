@@ -4,11 +4,12 @@ import { useCallback, useEffect } from 'react'
 import { Txt2ImgResult } from '@common/models/myapi.models'
 import { Logger } from '@common/logger';
 import { useAppDispatch, useAppSelector } from '../store/store'
-import { selectNext, selectPrevious, setCompareWithImage, setSelectedImage, swapImages } from '../store/images.slice'
+import { deleteImage, selectNext, selectPrevious, setCompareWithImage, setSelectedImage, swapImages } from '../store/images.slice'
 import { setNegative, setPrompt, setSeed } from '../store/options.slice'
 import Pill from './pill'
 import moment from 'moment';
 import Button from './button';
+import { MyApi } from '@/services/myapi.service';
 
 interface OptionMap {
     key: string
@@ -84,6 +85,12 @@ export default function Spotlight() {
         }
     }, [dispatch])
 
+    const onDeleteBtnClick = useCallback(() => {
+        if(!image || !confirm('Delete this image?')) return
+        MyApi.deleteImage(image)
+        dispatch(deleteImage(image))
+    }, [dispatch, image] )
+
     useEffect(() => {
         Logger.debug('Rendering Spotlight: [] effect')
         if (image) {
@@ -147,6 +154,7 @@ export default function Spotlight() {
                     { sameSeed && <span className="positive"> (Same)</span> }
                 </div>
                 <div className="compare-controls row">
+                    <Button onClick={() => onDeleteBtnClick()}>Delete</Button>
                     <Button onClick={() => dispatch(setCompareWithImage(image))}>Stash image as compare image</Button>
                     {otherImage && <Button onClick={() => dispatch(swapImages())}>Swap</Button>}
                 </div>
