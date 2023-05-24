@@ -7,9 +7,10 @@ import { useAppDispatch, useAppSelector } from '../store/store';
 import {
     setModel, setPrompt, setNegative, setCfgScale,
     setUpscaler, setUpscalerScale, setUpscalerSteps, setUpscalerDenoise,
-    setSampler, setSteps, setImageWidth, setImageHeight, setBatches, setImageCount, setClipSkip, setSeed, setRestoreFaces
+    setSampler, setSteps, setImageWidth, setImageHeight, setBatches, setClipSkip, setSeed, setRestoreFaces
 } from '../store/options.slice'
 import OptionInput from './optioninput';
+import Button from './button';
 
 const cfg_scale_title = `Classifier Free Guidance Scale - 
     how strongly the image should conform to prompt - 
@@ -42,14 +43,14 @@ export default function Options() {
     const [samplers, setSamplers] = useState<Sampler[]>([])
     const [upscalers, setUpscalers] = useState<Upscaler[]>([])
     const [disableModelSelect, setDisableModelSelect] = useState<boolean>(false)
-    
+
     useEffect(() => {
         (async () => {
             const models = await SdApi.getModels()
             const samplers = await SdApi.getSamplers()
             const upscalers = await SdApi.getUpscalers()
             const options = await SdApi.getOptions()
-            
+
             if (models) setModels(models.filter(m => !!m))
             if (samplers) setSamplers(samplers)
             if (upscalers) setUpscalers(upscalers)
@@ -90,6 +91,25 @@ export default function Options() {
         console.log('Upscaler changed', event.currentTarget.value)
     }, [dispatch, upscalers])
 
+    const loadPrompt = useCallback(async () => {
+        const clipb = await navigator.clipboard.readText()
+        const { success, prompt, negative, cfg } = parsePrompt(clipb)
+        if (!success) return
+        dispatch(setPrompt(prompt))
+        dispatch(setNegative(negative))
+        dispatch(setCfgScale(cfg))
+    }, [dispatch])
+
+    const loadBaseline = useCallback(async () => {
+        dispatch(setPrompt('(masterpiece, best quality, realistic, photorealistic, sharp focus:1.5)'))
+        dispatch(setNegative('(low quality:1.5), (worst quality:1.5), low resolution, ugly, blurry, bad anatomy'))
+    }, [dispatch])
+
+    const refreshModels = useCallback(async () => {
+        await SdApi.refreshModels()
+        window.location.reload()
+    }, [dispatch])
+
     const prompt_rows = 6
 
     return (
@@ -121,7 +141,7 @@ export default function Options() {
                 </div>
                 <div className="col">
                     <label htmlFor="sample_select">Sampler:</label>
-                    <select className={"form-control" + sameClass(sampler, last_sent?.sampler)} id="sample_select" value={sampler} onChange={onSamplerChanged}>
+                    <select className={"form-control " + sameClass(sampler, last_sent?.sampler)} id="sample_select" value={sampler} onChange={onSamplerChanged}>
                         {samplers.map((s, idx) => <option key={idx} value={s.name}>{s.name}</option>)}
                     </select>
                     <label htmlFor="steps_input">Sampling Steps</label>
@@ -131,7 +151,7 @@ export default function Options() {
                 </div >
                 <div className="col">
                     <label htmlFor="upscaler_select">Upscaler:</label>
-                    <select className={"form-control" + sameClass(upscaler, last_sent?.upscaler)} id="upscaler_select" value={upscaler} onChange={onUpscalerChanged}>
+                    <select className={"form-control " + sameClass(upscaler, last_sent?.upscaler)} id="upscaler_select" value={upscaler} onChange={onUpscalerChanged}>
                         {upscalers.map((u, idx) => <option key={idx} value={u.name}>{u.name}</option>)}
                     </select >
                     {/* <ng-container * ngIf="upscaler?.name != 'None'" > */}
@@ -147,7 +167,11 @@ export default function Options() {
                 <div className="col p100">
                     <textarea value={prompt} className={sameClass(prompt, last_sent?.prompt)} placeholder="Prompt.." onChange={event => dispatch(setPrompt(event.target.value))} rows={prompt_rows} />
                     <textarea value={negative} className={sameClass(negative, last_sent?.negative)} placeholder="Negative prompt.." onChange={event => dispatch(setNegative(event.target.value))} rows={prompt_rows / 2} />
-                    <div className="button load-prompt" onClick={() => loadPrompt()}>Load Prompt</div>
+                    <div className="row">
+                        <Button className="load-prompt" onClick={() => loadPrompt()}>Load Prompt</Button>
+                        <Button className="load-prompt" onClick={() => loadBaseline()}>Load Baseline</Button>
+                        <Button className="load-prompt" onClick={() => refreshModels()} >Refresh</Button>
+                    </div>
                 </div>
             </div>
         </fieldset>
