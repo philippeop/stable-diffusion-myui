@@ -10,6 +10,7 @@ import Pill from './pill'
 import moment from 'moment';
 import Button from './button';
 import { MyApi } from '@/services/myapi.service';
+import { ClickTwiceButton } from './clicktwice';
 
 interface OptionMap {
     key: string
@@ -36,20 +37,6 @@ export default function Spotlight() {
             if (extra.length) Logger.debug('Rendering Spotlight: The following keys are not displayed in the info panel:', extra.join(', '))
         }
     }, [image])
-
-    const onClick = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
-        return
-        const target = event.target as HTMLElement;
-        if (!target) return
-        if (target.tagName === "IMG") {
-            dispatch(setSelectedImage(undefined))
-            return
-        }
-        if (['info-line', 'pill'].find((c) => target.classList.contains(c))) return
-        const perc = event.clientX / window.innerWidth;
-        if (perc < 0.5) return dispatch(selectPrevious())
-        if (perc > 0.5) return dispatch(selectNext())
-    }, [dispatch])
 
     const onKeyUp = useCallback((event: KeyboardEvent) => {
         if (!image) return
@@ -86,7 +73,7 @@ export default function Spotlight() {
     }, [dispatch])
 
     const onDeleteBtnClick = useCallback(() => {
-        if(!image || !confirm('Delete this image?')) return
+        if(!image) return
         MyApi.deleteImage(image)
         dispatch(deleteImage(image))
     }, [dispatch, image] )
@@ -136,7 +123,7 @@ export default function Spotlight() {
     const sameSeed = image.seed.toString() === seedOnUi.toString()
 
     return (
-        <div className='spotlight-overlay' onClick={onClick}>
+        <div className='spotlight-overlay'>
             <div className='info'>
                 <div className="prompt-container" onClick={() => loadPrompt(image.options.prompt)}>
                     {parsePrompt(image.options.prompt).map((s, i) => <Pill key={i}>{s}</Pill>)}
@@ -154,7 +141,9 @@ export default function Spotlight() {
                     { sameSeed && <span className="positive"> (Same)</span> }
                 </div>
                 <div className="compare-controls row">
-                    <Button onClick={() => onDeleteBtnClick()}>Delete</Button>
+                    <ClickTwiceButton styleIdle='positive' styleHot='negative' onClickTwice={() => onDeleteBtnClick()}>
+                        Delete
+                    </ClickTwiceButton>
                     <Button onClick={() => dispatch(setCompareWithImage(image))}>Stash image as compare image</Button>
                     {otherImage && <Button onClick={() => dispatch(swapImages())}>Swap</Button>}
                 </div>

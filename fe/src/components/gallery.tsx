@@ -10,6 +10,7 @@ import { useAppDispatch, useAppSelector } from '../store/store'
 import { deleteImage, setSelectedImage, setModelFilter, setNewestFirst, selectNext, setPromptFilter, refreshImages } from '../store/images.slice'
 import { SdApi } from '@/services/sdapi.service';
 import { Model } from '@/common/models/sdapi.models';
+import { ClickTwice } from './clicktwice';
 
 export default function Gallery() {
     Logger.debug('Rendering Gallery')
@@ -30,10 +31,10 @@ export default function Gallery() {
     useEffect(() => {
         (async () => {
             const allModels = await SdApi.getModels()
-            if(!allModels) return
+            if (!allModels) return
             const modelsWithImages = allModels
-            .filter(m => { 
-                const count = allimages.filter(i => i.options.model === m.model_name).length
+                .filter(m => {
+                    const count = allimages.filter(i => i.options.model === m.model_name).length
                 m.title = m.title + ' (' + count + ')'
                 return count !== 0
             })
@@ -71,22 +72,10 @@ export default function Gallery() {
         dispatch(setSelectedImage(image))
     }, [dispatch])
 
-    const timer = useRef<NodeJS.Timeout>()
-    const [deleteName, setDeleteName] = useState<string>()
-    const onDeleteClick = useCallback((image: Txt2ImgResult) => {
-        if(deleteName && deleteName !== image.name) {
-            return
-        }
-        if (deleteName == undefined) {
-            timer.current = setTimeout(() => { setDeleteName(undefined) }, 2000)
-            setDeleteName(image.name)
-            return () => clearTimeout(timer.current)
-        }
-        clearTimeout(timer.current)
+    const deleteImageAction = useCallback((image: Txt2ImgResult) => {
         MyApi.deleteImage(image)
         dispatch(deleteImage(image))
-        setDeleteName(undefined)
-    }, [dispatch, deleteName])
+    }, [dispatch])
 
     const modelFilterChanged = useCallback((event: FormEvent<HTMLSelectElement>) => {
         dispatch(setModelFilter(event.currentTarget.value))
@@ -124,8 +113,10 @@ export default function Gallery() {
             <div key={i.name} className={classes}>
                 {/* {groupByBatch && (<div className="batch-tag">{batchNumber}</div>)} */}
                 <img loading="lazy" alt={i.name} src={'/myapi/img/' + i.name} onClick={() => onImageClicked(i)} />
-                <div className={i.name == deleteName ? 'btn-del hot' : 'btn-del'} title={`Delete image.\nPress twice.`} onClick={() => onDeleteClick(i)}></div>
-            </div>
+                <ClickTwice styleIdle='btn-del' styleHot='btn-del hot' onClickTwice={() => deleteImageAction(i)} >
+                    <div title={`Delete image.\nPress twice.`}></div>
+                </ClickTwice>
+            </div >
         )
     })
 
