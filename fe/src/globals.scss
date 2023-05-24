@@ -32,13 +32,15 @@ $font-color: #aaa;
 $accent-color: #333;
 $accent2-color: #555;
 
-$negative-color: rgb(123, 33, 33);
 $positive-color: green;
-$positie-bg: rgb(46, 77, 46);
+$negative-color: rgb(123, 33, 33);
+$positive-bg: rgb(46, 77, 46);
+$negative-bg: rgb(77, 46, 46);
 
 $divider: 2px solid $accent-color;
 
 $breakpoint-med: 1300px;
+$breakpoint-large: 1600px;
 
 .options,
 .prompts {
@@ -61,6 +63,12 @@ body {
     border-left-style: ridge;
     border-right-style: groove;
     border-color: $accent2-color;
+
+    @media (max-width: $breakpoint-large) {
+        flex-direction: column;
+        margin-left: 1%;
+        margin-right: 1%;
+    }
 }
 
 .row {
@@ -127,34 +135,39 @@ body {
             flex-direction: column;
         }
     }
+
+    .load-prompt {
+        width: 20%;
+    }
 }
 
 .action-container {
     display: flex;
     flex-direction: column-reverse;
     width: 20%;
+    min-height: 100%;
+
+    .log {
+        height: 10%;
+        flex-grow: 1;
+        overflow-y: scroll;
+    }
+
+    .action-row {
+        display: flex;
+        flex-direction: row;
+        height: 20%;
+    }
+
     .button {
         margin: 0 auto;
-    }
-
-    .working {
-        background-color: $negative-color;
-        cursor: progress;
-    }
-
-    .skip {
-        background-color: $negative-color;
-
-        &.working {
-            cursor: default;
-            background-color: $positive-color;
-        }
     }
 }
 
 .gallery-container {
     display: flex;
     flex-direction: column;
+    user-select: none;
 
     .gallery-filters {
         height: 2em;
@@ -259,30 +272,49 @@ body {
         height: 100%;
     }
 
-    .previous {
-        width: 40%;
-        height: 100%;
+    .triangle {
+        width: 30%;
+        height: 50%;
         position: absolute;
-        left: 0;
-        top: 0;
-        z-index: 15;
+        top: 50%;
+        left: 50%;
+        stroke: gray;
+        stroke-width: 50;
+        fill: white;
+        fill-opacity: 0;
+        stroke-opacity: 0;
+    }
 
-        &:hover {
-            background-color: rgba($color: gray, $alpha: 0.3);
+    .previous {
+        left: 0;
+        .triangle {
+            transform: translate(0, -50%);
         }
     }
 
     .next {
+        right: 0;
+        .triangle {
+            transform: translate(-100%, -50%);
+        }
+    }
+
+    .previous, .next {
         width: 40%;
         height: 100%;
         position: absolute;
-        right: 0;
         top: 0;
         z-index: 15;
+    }
 
-        &:hover {
-            background-color: rgba($color: gray, $alpha: 0.3);
-        }
+    .previous:hover .triangle, .next:hover .triangle {
+        fill-opacity: 0.2;
+        stroke-opacity: 0.2;
+    }
+
+    .next:hover {
+        fill-opacity: 0.2;
+        stroke-opacity: 0.2;
     }
 
     .info {
@@ -290,16 +322,16 @@ body {
         top: 0;
         left: 0;
         width: 20%;
-        height: 100%;
+        max-height: 100%;
         margin: 10px;
+        padding: 0.5em;
         color: gray;
         z-index: 20;
-        overflow: scroll;
-
-        background-color: black;
+        overflow-y: auto;
+        
         border: 1px dashed white;
         border-radius: 5px;
-        padding: 0.5em;
+        filter: drop-shadow(2px 4px 6px black);
 
         .prompt-container,
         .negative-container {
@@ -331,12 +363,20 @@ body {
 
 .same {
     color: #072;
-}
-.diff {
-    color: rgb(85, 27, 0)
+    option {
+        color: black;
+    }
 }
 
-input,textarea {
+.diff {
+    color: rgb(85, 27, 0);
+    option {
+        color: black;
+    }
+}
+
+input,
+textarea {
     background-color: #eee;
 }
 
@@ -347,13 +387,16 @@ input,textarea {
     font-weight: bolder;
     font-size: larger;
     width: 100%;
-    max-width: 8em;
-    background-color: $positie-bg;
+    height: 100%;
+    color: $positive-color;
+    background-color: $positive-bg;
     border: 0.3em outset $accent-color;
+    box-sizing: border-box;
     display: flex;
     justify-content: center;
     align-items: center;
     transition: filter, background-color 0.1s;
+    text-align: center;
 
     &:active {
         border-style: inset;
@@ -361,10 +404,22 @@ input,textarea {
         filter: brightness(200%);
         transition: filter 0.1s;
     }
+
+    &.negative {
+        background-color: $negative-bg;
+    }
 }
 
 .positive {
-    color: green;
+    color: $positive-color;
+}
+
+.negative {
+    color: $negative-color;
+}
+
+.hidden {
+    display: none;
 }
 
 .option-input {
@@ -416,4 +471,23 @@ input,textarea {
         color: white;
         background-color: red;
     }
+}
+
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+    background: #888;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
 }
