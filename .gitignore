@@ -1,0 +1,10 @@
+
+be/db.json
+be/imgs/
+node_modules/
+dist/
+cache/
+
+*.pem
+
+*.safetensors

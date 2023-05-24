@@ -1,0 +1,4 @@
+set HF_HOME=./cache
+set HF_HUB_DISABLE_TELEMETRY=1
+set DISABLE_TELEMETRY=YES
+python main.py

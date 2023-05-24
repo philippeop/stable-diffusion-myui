@@ -1,0 +1,39 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"typescript.preferences.quoteStyle": "single",
+		"restoreTerminals.terminals": [
+			{
+				"splitTerminals": [
+					{
+						"name": "fe",
+						"commands": [ "cd fe", "npm run dev" ]
+					},
+					{
+						"name": "be",
+						"commands": [ "cd be", "npm run dev" ]
+					}
+				]
+			}
+		],
+		"terminal.integrated.persistentSessionReviveProcess": "never",
+		"explorer.fileNesting.enabled": true,
+		"files.exclude": {
+			"**/.git": true,
+			"**/.svn": true,
+			"**/.hg": true,
+			"**/CVS": true,
+			"**/.DS_Store": true,
+			"**/Thumbs.db": true,
+			"fe/node_modules": true,
+			"fe/.next": true,
+			"fe/next-env.d.ts": true,
+			"be/node_modules": true
+		},
+		"workbench.startupEditor": "none"
+	}
+}
