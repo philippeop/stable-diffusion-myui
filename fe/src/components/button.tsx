@@ -1,14 +1,20 @@
 'use client';
+import classNames from 'classnames';
 import { PropsWithChildren } from 'react'
 
 interface ButtonProps extends PropsWithChildren {
     id?: string
-    onClick: () => void
+    className?: string
+    onClick?: () => void
 }
 export default function Button(props: ButtonProps) {
-    const { id, children, onClick } = props
+    const { id, className, children, onClick } = props
+    const classes = classNames({
+        'button': true,
+        [className || '']: !!className
+    })
     return (
-        <div className="button" id={id} onClick={() => onClick()}>
+        <div className={classes} id={id} onClick={() => onClick && onClick()}>
             <div className="button-inner">
                 {children}
             </div>
