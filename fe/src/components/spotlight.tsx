@@ -191,7 +191,7 @@ function parsePrompt(prompt: string): string[] {
 
 function imageSizeString(i: Txt2ImgResult): string {
     let str = i.options.image_width + ' x ' + i.options.image_height;
-    if (i.options.upscaler) {
+    if (i.options.upscaler && i.options.upscaler !== 'None') {
         const extra = ` (upscaled to ${i.options.image_width * i.options.upscaler_scale} x ${i.options.image_height * i.options.upscaler_scale})`
         str += extra
     }
