@@ -37,10 +37,6 @@ const getOptions = async () => {
     }
 }
 
-const getProgress = () => {
-    return tryGet<Progress>('/sdapi/v1/progress')
-}
-
 const getLoras = () => {
     return tryGet<Lora[]>('/sdapi/v1/loras')
 }
@@ -83,7 +79,6 @@ export const SdApi = {
     getSamplers,
     getUpscalers,
     getOptions,
-    getProgress,
     getLoras, getEmbeddings,
     setModel,
     skip,

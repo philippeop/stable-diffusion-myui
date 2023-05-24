@@ -2,11 +2,11 @@
 import { createSlice } from "@reduxjs/toolkit";
 import moment from 'moment'
 
-import { Progress } from "./../common/models/sdapi.models";
+import { BackendStatus } from '@/common/models/myapi.models';
 
 interface WorkerStore {
     working: boolean
-    progress?: Progress
+    progress?: BackendStatus
     messages: string[]
 }
 const default_worker: WorkerStore = {
@@ -21,8 +21,13 @@ export const workerSlice = createSlice({
         setWorking(state, action) {
             state.working = !!action.payload
         },
+        setProgress(state, action) {
+            const backendStatus = { ...action.payload}
+            delete backendStatus.image
+            state.progress = backendStatus
+        },
         addMessage(state, action) {
-            if(state.messages.length >= 15) {
+            if(state.messages.length >= 10) {
                 state.messages.shift()
             }
             state.messages.push(`${moment().format('H:mm:ss')} - ${action.payload}`)
@@ -32,6 +37,7 @@ export const workerSlice = createSlice({
 
 export const {
     setWorking,
+    setProgress,
     addMessage
 } = workerSlice.actions
 

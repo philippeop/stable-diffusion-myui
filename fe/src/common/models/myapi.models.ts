@@ -7,3 +7,12 @@ export interface Txt2ImgResult {
     /** REAL SEED */
     seed: number
 }
+
+export interface BackendStatus {
+    running: boolean
+    tasks: number
+    progress?: number
+    started?: string
+    skipped?: boolean
+    image?: string
+  }

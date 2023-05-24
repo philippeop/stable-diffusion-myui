@@ -1,5 +1,7 @@
 import { WebSocketServer } from "ws";
+
 import { Logger } from "../fe/src/common/logger.js";
+import { BackendStatus } from '../fe/src/common/models/myapi.models.js';
 
 export class MessagingService {
     private socket: WebSocketServer;
@@ -19,7 +21,7 @@ export class MessagingService {
     }
 
     public sendTxt2ImgError(error: string) {
-        this.send('txt2img', error)
+        this.send('error', error)
     }
 
     public sendTxt2ImgDone() {
@@ -28,6 +30,10 @@ export class MessagingService {
 
     public sendImageDelete(name: string) {
         this.send('delete', name)
+    }
+
+    public sendProgress(progress: BackendStatus) {
+        this.send('progress', progress)
     }
 
     public send(type: string, data: unknown) {

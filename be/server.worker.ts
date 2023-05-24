@@ -10,7 +10,7 @@ export class Worker {
         this.timer = setInterval(this.act, interval)
     }
 
-    public addTask(task: Task, params: TaskParam) {
+    public addTask(task: Task, params?: TaskParam) {
         Logger.log('Queued a task, in queue', this.tasks.length)
         this.tasks.push({ task, params})
     }
@@ -23,6 +23,7 @@ export class Worker {
         
         task(params).then(() => {
             this.running = false
+            if (this.onOneCompleted) this.onOneCompleted()
             if (!this.tasks.length && this.onLast) this.onLast()
         })
     }
@@ -34,5 +35,5 @@ type CallbackTask = () => Promise<void>
 type Task = (param: TaskParam) => Promise<void>
 interface TaskWithParams {
     task: Task
-    params: TaskParam
+    params?: TaskParam
 }

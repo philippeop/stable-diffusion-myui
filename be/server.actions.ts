@@ -23,7 +23,32 @@ export class Actions {
         this.db = new MyUiDb()
         this.msgg = new MessagingService(wss)
         this.worker = new Worker()
+        this.worker.onOneCompleted = async () => {
+            this.msgg.sendNotice(`Worker completed 1 task, ${this.worker.tasks.length} to go`)
+        }
         this.worker.onLast = async () => this.msgg.sendTxt2ImgDone()
+
+        const t = setInterval(async () => {
+            if (!this.worker.running) {
+                this.msgg.sendProgress({
+                    running: false,
+                    tasks: this.worker.tasks.length
+                })
+            }
+            else {
+                const progress = await this.getProgress()
+                if (!progress) return // should always be progress (even 0) if webui works
+
+                this.msgg.sendProgress({
+                    running: true,
+                    tasks: this.worker.tasks.length,
+                    progress: Math.round(progress.progress * 100),
+                    started: progress.state.job_timestamp,
+                    skipped: progress.state.skipped || progress.state.interrupted,
+                    image: progress.current_image
+                })
+            }
+        }, 2000)
     }
 
     public listImagesAction = (_: Request, res: Response) => {
@@ -82,7 +107,9 @@ export class Actions {
             }
             else {
                 const error = await response.json() as SdApiError
-                const txt = `WebUI error: ${error.error} ${error.errors}`
+                const isOom = error.error === 'OutOfMemoryError'
+                const errorMsg = isOom ? error.errors.split('If reserved memory is')[0] : error.errors
+                const txt = `WebUI error: ${error.error} -- ${errorMsg}`
                 this.msgg.sendTxt2ImgError(txt)
                 Logger.warn(txt)
             }
@@ -130,8 +157,8 @@ export class Actions {
     }
 
     private getProgress = async () => {
-        const response = await fetch(`${WEBUI_URL}/sdapi/v1/txt2img`)
-        if(!response.ok) return
+        const response = await fetch(`${WEBUI_URL}/sdapi/v1/progress`)
+        if (!response.ok) return
         return await response.json() as Progress
     }
 
@@ -145,7 +172,6 @@ export class Actions {
         // Logger.log('Negative before:', JSON.stringify(options.negative))
         if (options.sampler) request.sampler_name = options.sampler;
         if (options.sampler) request.sampler_index = options.sampler;
-
         request.steps = options.steps;
         request.save_images = false;
         request.send_images = true;
