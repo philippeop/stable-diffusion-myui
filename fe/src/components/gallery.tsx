@@ -21,7 +21,6 @@ export default function Gallery() {
     // const [ groupByBatch, setGroupByBatch ] = useState<boolean>(false)
     const promptFilter = useAppSelector((state) => state.images.promptFilter)
     const compareImage = useAppSelector((state) => state.images.compareWithImage)
-    const [deleteName, setDeleteName] = useState<string>()
     const models = [...new Set(allimages.map(i => i.options.model || ''))]
     const [isSlideshow, setIsSlideshow] = useState<boolean>(false)
     const timerHandle = useRef<NodeJS.Timer>()
@@ -56,22 +55,20 @@ export default function Gallery() {
         dispatch(refreshImages())
     }, [dispatch])
 
-    useEffect(() => {
-        console.log('Rendering Gallery: deleteIdx effect')
-        const t = setTimeout(() => { setDeleteName(undefined) }, 2000)
-        return () => clearTimeout(t)
-    }, [deleteName])
-
-
     const onImageClicked = useCallback((image: Txt2ImgResult) => {
         Logger.debug('Gallery: Clicked on image', image.name)
         dispatch(setSelectedImage(image))
     }, [dispatch])
 
+    const [deleteName, setDeleteName] = useState<string>()
     const onDeleteClick = useCallback((image: Txt2ImgResult) => {
-        if (deleteName == undefined || deleteName !== image.name) {
-            setDeleteName(image.name)
+        if(deleteName && deleteName !== image.name) {
             return
+        }
+        if (deleteName == undefined) {
+            const t = setTimeout(() => { setDeleteName(undefined) }, 2000)
+            setDeleteName(image.name)
+            return () => clearTimeout(t)
         }
         MyApi.deleteImage(image)
         dispatch(deleteImage(image))
