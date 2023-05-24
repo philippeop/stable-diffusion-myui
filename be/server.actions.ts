@@ -1,14 +1,16 @@
 import fs from 'fs'
 import fetch from 'node-fetch';
 import { Request, Response } from 'express';
+import { WebSocketServer } from 'ws';
+
+import { ImageMetadata, MyUiDb } from './server.db.js'
+import { MessagingService } from './server.messaging.js';
+import { Worker } from './server.worker.js'
 
 import { Logger } from './../fe/src/common/logger.js'
 import { MyUiOptions } from "./../fe/src/common/models/option.models.js"
 import { Txt2ImgResult } from "./../fe/src/common/models/myapi.models.js"
-import { Txt2ImgResponse, Txt2ImgRequest, SdApiError } from "./../fe/src/common/models/sdapi.models.js"
-import { ImageMetadata, MyUiDb } from './server.db.js'
-import { MessagingService } from './server.messaging.js';
-import { WebSocketServer } from 'ws';
+import { Txt2ImgResponse, Txt2ImgRequest, SdApiError, Progress } from "./../fe/src/common/models/sdapi.models.js"
 
 const WEBUI_URL = 'http://127.0.0.1:7861'
 // const FE_URL = 'http://localhost:7999'
@@ -36,7 +38,7 @@ export class Actions {
         if (!options) Logger.error('Received no options for txt2imgAction')
         res.status(200).send()
 
-        this.worker.addTask(() => this.handleTxt2ImgAction(options))
+        this.worker.addTask(this.handleTxt2ImgAction, options)
         this.msgg.sendNotice(`Queued prompt, ${this.worker.running ? 'working' : 'idle'}, ${this.worker.tasks.length} in queue`)
     }
 
@@ -57,10 +59,9 @@ export class Actions {
             }
 
             Logger.debug(`Got ${data.images.length} images for batch ${i + 1}, processing`)
-            for (const [key, imageData] of data.images.entries()) {
+            for (const [, imageData] of data.images.entries()) {
                 const name = this.saveImage(imageData)
-                this.db.createImage(name, options, data.parameters, data.info)
-                data.images[key] = `/myapi/img/${name}`
+                await this.db.createImage(name, options, data.parameters, data.info)
             }
             this.msgg.sendTxt2ImgNewImage(i + 1, batches)
         }
@@ -128,14 +129,20 @@ export class Actions {
         }
     }
 
+    private getProgress = async () => {
+        const response = await fetch(`${WEBUI_URL}/sdapi/v1/txt2img`)
+        if(!response.ok) return
+        return await response.json() as Progress
+    }
+
     private optionsToRequest = (options: MyUiOptions): Txt2ImgRequest => {
         const request = {} as Txt2ImgRequest;
         request.prompt = options.prompt.replace(/ \n/g, ' ').replace(/\n/g, ' ')
         request.negative_prompt = options.negative.replace(/ \n/g, ' ').replace(/\n/g, ' ')
-        Logger.debug('Prompt before:', JSON.stringify(options.prompt))
-        Logger.debug('Negative before:', JSON.stringify(options.negative))
-        Logger.log('Prompt after:', JSON.stringify(request.prompt))
-        Logger.log('Negative before:', JSON.stringify(options.negative))
+        // Logger.debug('Prompt before:', JSON.stringify(options.prompt))
+        // Logger.debug('Negative before:', JSON.stringify(options.negative))
+        // Logger.log('Prompt after:', JSON.stringify(request.prompt))
+        // Logger.log('Negative before:', JSON.stringify(options.negative))
         if (options.sampler) request.sampler_name = options.sampler;
         if (options.sampler) request.sampler_index = options.sampler;
 
@@ -184,32 +191,5 @@ export class Actions {
             timestamp: meta.timestamp,
             seed: meta.seed
         }
-    }
-}
-
-type task = () => Promise<void>
-class Worker {
-    running = false
-    timer
-    tasks: task[] = []
-    onLast?: task
-    constructor(interval = 2000) {
-        this.timer = setInterval(this.act, interval)
-    }
-
-    public addTask(task: task) {
-        Logger.log('Queued a task')
-        this.tasks.push(task)
-    }
-
-    private act = () => {
-        Logger.debug('[WORKER] Is', this.running ? 'busy,' : 'idle,', this.tasks.length, 'tasks to do')
-        if (!this.tasks.length || this.running) return
-        this.running = true
-        this.tasks.splice(0)[0]().then(() => {
-            this.running = false
-            if (!this.tasks.length && this.onLast) this.onLast()
-        })
-        
     }
 }
