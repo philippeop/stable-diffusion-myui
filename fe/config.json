@@ -8,10 +8,48 @@
         }
     ],
     "pill_keyword_categories": {
-        "nsfw": [ "nsfw" ],
-        "mild": [ "butt" ],
-        "quality_good": [ "masterwork", "masterpiece", "realistic", "photorealistic", "high resolution", "best quality", "high quality", "highly detailed", "intricate details", "perfect", "sharp focus", "intricate", "cinematic lighting" ],
-        "quality_bad": [ "worst quality", "low quality", "blurry", "ugly", "bad anatomy", "disfigured", "deformed", "mutation", "extra limbs", "text", "watermark" ],
-        "typos": [ "photrealistic" ]
+        "nsfw": [
+            "nsfw"
+        ],
+        "mild": [
+            "butt"
+        ],
+        "quality_good": [
+            "masterwork",
+            "masterpiece",
+            "realistic",
+            "photorealistic",
+            "high resolution",
+            "best quality",
+            "high quality",
+            "highly detailed",
+            "intricate details",
+            "perfect",
+            "sharp focus",
+            "intricate",
+            "cinematic lighting"
+        ],
+        "quality_bad": [
+            "worst quality",
+            "low quality",
+            "blurry",
+            "ugly",
+            "bad anatomy",
+            "disfigured",
+            "deformed",
+            "mutation",
+            "extra limbs",
+            "text",
+            "watermark"
+        ],
+        "lora": [
+            "easynegative",
+            "ng_deepnegative_v1_75t",
+            "unrealisticdream",
+            "baddream"
+        ],
+        "typos": [
+            "photrealistic"
+        ]
     }
 }

@@ -474,6 +474,11 @@ textarea {
         color: white;
         background-color: red;
     }
+
+    &.is_lora {
+        font-weight: bold;
+        color: black;
+    }
 }
 
 ::-webkit-scrollbar {
