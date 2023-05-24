@@ -56,10 +56,13 @@ export default function GeneratorProgress() {
         if (data.type === 'txt2img') {
             dispatch(refreshImages())
             dispatch(addMessage(data.data))
-            if (data.data === 'done') dispatch(setWorking(false))
+            if (data.data === 'Done') dispatch(setWorking(false))
         }
         else if (data.type === 'info') {
             dispatch(addMessage(data.data))
+        }
+        else if (data.type === 'test') {
+            dispatch(addMessage('[TEST]: ' + data.data))
         }
     }, [dispatch, lastMessage])
 

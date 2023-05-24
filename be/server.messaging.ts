@@ -15,7 +15,7 @@ export class MessagingService {
     }
 
     public sendTxt2ImgNewImage(count: number, total: number) {
-        this.send('txt2img', `finished ${count} of ${total}`)
+        this.send('txt2img', `Finished Txt2Img ${count} of ${total}`)
     }
 
     public sendTxt2ImgError(error: string) {
@@ -23,7 +23,7 @@ export class MessagingService {
     }
 
     public sendTxt2ImgDone() {
-        this.send('txt2img', 'done')
+        this.send('txt2img', 'Done')
     }
 
     public sendImageDelete(name: string) {

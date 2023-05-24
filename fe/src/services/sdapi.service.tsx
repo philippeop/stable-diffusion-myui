@@ -1,5 +1,5 @@
 'use client';
-import { axiosInstance, tryGet } from './common.services'
+import { axiosInstance, tryGet, tryPost } from './common.services'
 import { Embedding, EmbeddingResponse, Lora, Model, Progress, Sampler, Upscaler } from "@common/models/sdapi.models";
 import { SdApiOptions } from "@common/models/option.models";
 import { Logger } from '@/common/logger';
@@ -69,6 +69,11 @@ const setModel = async (model: Model) => {
     }
 }
 
+
+const skip = () => {
+    return tryPost<string>('/sdapi/v1/skip')
+}
+
 export const SdApi = {
     getModels,
     getSamplers,
@@ -77,4 +82,5 @@ export const SdApi = {
     getProgress,
     getLoras, getEmbeddings,
     setModel,
+    skip,
 }

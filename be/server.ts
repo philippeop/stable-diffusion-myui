@@ -1,17 +1,17 @@
 import http from 'http'
-import express, { Request, Response } from 'express';
+import express from 'express';
 import { WebSocketServer } from 'ws';
 import { Logger } from '../fe/src/common/logger.js'
 
-import { MessagingService } from './server.messaging.js'
-import { deleteAction, getImageAction, listImagesAction, txt2imgAction } from './server.actions.js'
+import { Actions } from './server.actions.js'
 
 const HOST = '127.0.0.1'
 const PORT = 7999
-export class Test {
+export class Main {
     server
     app
     wss
+    actions
     constructor() {
         Logger.log('Server starting up...')
         this.app = express()
@@ -20,31 +20,27 @@ export class Test {
         this.server = http.createServer(this.app)
         this.wss = new WebSocketServer({ server: this.server, path: "/ws" })
         this.wss.on('connection', this.onConnect)
+        this.actions = new Actions(this.wss)
         this.setupRouting()
         this.server.listen(PORT, HOST, () => {
             Logger.log(`Running on http://${HOST}:${PORT}`)
         })
     }
 
-    onConnect(connection: WebSocket) {
-        console.log('new connection', connection.readyState)
-        //wss.emit('message', 'hello')
-        connection.send('message hello')
-        // ws.addEventListener('message', (message) => {
-        //     console.log('ws message:', message.data);
-        // })
+    onConnect(connection: WebSocket, req: http.IncomingMessage) {
+        Logger.log('[WebSocket] New connection from', req.socket.remoteAddress)
+        connection.onclose = (() => { 
+            Logger.log('[WebSocket] Disconnection:', req.socket.remoteAddress)
+         })
     }
 
     setupRouting() {
-        this.app.post('/myapi/v1/txt2img', (req, res) => wrap(txt2imgAction, req, res, this.wss))
-        this.app.get('/myapi/img/:identifier', (req, res) => wrap(getImageAction, req, res, this.wss))
-        this.app.get('/myapi/img', (req, res) => wrap(listImagesAction, req, res, this.wss))
-        this.app.delete('/myapi/img/:identifier', (req, res) => wrap(deleteAction, req, res, this.wss))
+        this.app.post('/myapi/v1/txt2img', this.actions.txt2imgAction)
+        this.app.get('/myapi/img/:identifier', this.actions.getImageAction)
+        this.app.get('/myapi/img', this.actions.listImagesAction)
+        this.app.delete('/myapi/img/:identifier', this.actions.deleteAction)
+        // this.app.get('/myapi/test', (_, res) => { })
     }
 }
 
-new Test()
-
-function wrap(func: (req: Request, res: Response, msg: MessagingService) => void, req: Request, res: Response, wss: WebSocketServer) {
-    func(req, res, new MessagingService(wss));
-}
+new Main()
