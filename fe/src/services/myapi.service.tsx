@@ -10,6 +10,7 @@ const list = async () => {
 
 const txt2img = (options: MyUiOptions) => {
     return tryPost<void>('/myapi/v1/txt2img', options)
+    // return tryGet('/myapi/test')
 }
 
 const deleteImage = (image: Txt2ImgResult) => {
@@ -21,8 +22,9 @@ const deleteImage = (image: Txt2ImgResult) => {
     }
 }
 
+
 export const MyApi = {
     list,
     txt2img,
-    deleteImage
+    deleteImage,
 }

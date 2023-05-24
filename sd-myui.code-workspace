@@ -11,11 +11,16 @@
 				"splitTerminals": [
 					{
 						"name": "fe",
-						"commands": [ "cd fe", "npm run dev" ]
+						"commands": [ "cd fe", "npm run dev-ssl" ]
 					},
 					{
 						"name": "be",
 						"commands": [ "cd be", "npm run dev" ]
+					},
+					{
+						"name": "webui",
+						"commands": [ "cd ./../stable-diffusion-webui", "./webui-user-api.bat" ],
+
 					}
 				]
 			}

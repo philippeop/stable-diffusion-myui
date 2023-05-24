@@ -26,7 +26,7 @@ export async function tryGet<T>(url: string): Promise<T | undefined> {
     }
 }
 
-export async function tryPost<T>(url: string, payload: unknown): Promise<T | undefined> {
+export async function tryPost<T>(url: string, payload?: unknown): Promise<T | undefined> {
     try {
         const response = await axiosInstance.post<T>(url, payload)
         return response.data
