@@ -1,28 +1,21 @@
 'use client';
 import { useCallback, useEffect } from 'react'
+import moment from 'moment';
 
 import { Txt2ImgResult } from '@common/models/myapi.models'
 import { Logger } from '@common/logger';
 import { useAppDispatch, useAppSelector } from '../store/store'
 import { deleteImage, selectNext, selectPrevious, setCompareWithImage, setSelectedImage, swapImages } from '../store/images.slice'
-import { setNegative, setPrompt, setSeed } from '../store/options.slice'
+import { setSeed } from '../store/options.slice'
 import Pill from './pill'
-import moment from 'moment';
 import Button from './button';
 import { MyApi } from '@/services/myapi.service';
 import { ClickTwiceButton } from './clicktwice';
 
-interface OptionMap {
-    key: string
-    label: string
-    skip?: boolean
-    getter?: ((i: Txt2ImgResult) => string | number)
-    onClick?: ((i: Txt2ImgResult) => void)
-}
-
 export default function Spotlight() {
     Logger.debug('Rendering Spotlight')
     const dispatch = useAppDispatch()
+    const currentOptions = useAppSelector(s => s.options)
     const image = useAppSelector(s => s.images.selectedImage)
     const otherImage = useAppSelector(s => s.images.compareWithImage)
     const prompt = useAppSelector(s => s.options.prompt)
@@ -54,16 +47,23 @@ export default function Spotlight() {
         }
     }, [dispatch, image])
 
-    const loadPrompt = useCallback((promptStr: string) => {
-        if (confirm('This will override you current prompt. Are you sure?')) {
-            dispatch(setPrompt(promptStr))
+    useEffect(() => {
+        Logger.debug('Rendering Spotlight: [] effect')
+        if (image) {
+            document.addEventListener('keyup', onKeyUp)
         }
+        else {
+            document.removeEventListener('keyup', onKeyUp)
+        }
+        return () => document.removeEventListener('keyup', onKeyUp)
+    }, [image, onKeyUp])
+
+    const loadPrompt = useCallback((promptStr: string) => {
+        navigator.clipboard.writeText(promptStr)
     }, [dispatch])
 
     const loadNegative = useCallback((promptStr: string) => {
-        if (confirm('This will override you current negative prompt. Are you sure?')) {
-            dispatch(setNegative(promptStr))
-        }
+        navigator.clipboard.writeText(promptStr)
     }, [dispatch])
 
     const loadSeed = useCallback((seed: number) => {
@@ -78,44 +78,32 @@ export default function Spotlight() {
         dispatch(deleteImage(image))
     }, [dispatch, image] )
 
-    useEffect(() => {
-        Logger.debug('Rendering Spotlight: [] effect')
-        if (image) {
-            document.addEventListener('keyup', onKeyUp)
-        }
-        else {
-            document.removeEventListener('keyup', onKeyUp)
-        }
-        return () => document.removeEventListener('keyup', onKeyUp)
-    }, [image, onKeyUp])
-
     if (!image) return (<></>)
 
     const optionsMapper: OptionMap[] = [
-        { key: 'name', label: 'Name', getter: i => i.name },
-        { key: 'model', label: 'Model' },
-        { key: 'prompt', label: 'Prompt', skip: true },
-        { key: 'negative', label: 'Negative', skip: true },
-        { key: 'size', label: 'Size', getter: imageSizeString },
-        { key: 'sampler', label: 'Sampler' },
-        { key: 'steps', label: '> Steps' },
-        { key: 'upscaler', label: 'Upscaler' },
-        { key: 'upscaler_scale', label: '> Upscaler scale' },
-        { key: 'upscaler_steps', label: '> Upscaler steps' },
-        { key: 'upscaler_denoise', label: '> Upscaler denoise' },
-        { key: 'cfg_scale', label: 'CFG Scale' },
-        { key: 'clip_skip', label: 'CLIP skip' },
-        //{ key: 'timestamp', label: 'Generated', getter: i => i.timestamp },
-        { key: 'generated', label: 'Generated', getter: i => moment(i.timestamp, 'YYYYMMDDHHmmss').format('YYYY-MM-DD H:mm:ss') },
-        //{ key: 'seed', label: 'Seed', getter: i => i.seed + (i.seed === seed ? ' (Same) ' : ''), onClick: i => loadSeed(i.seed) },
+        field('name', 'Name', i => i.name),
+        compareField('model', 'Model'),
+        field('size', 'Size', imageSizeString),
+        compareField('sampler', 'Sampler'),
+        compareField('steps', 'Steps'),
+        compareField('upscaler', 'Upscaler'),
+        compareField('upscaler_scale', '> Upscaler scale'),
+        compareField('upscaler_steps', '> Upscaler steps'),
+        compareField('upscaler_denoise', '> Upscaler denoise'),
+        compareField('cfg_scale', 'CFG Scale'),
+        compareField('clip_skip', 'CLIP skip'),
+        compareField('restore_faces', 'Restore face'),
+        field('generated', 'Generated', i => moment(i.timestamp, 'YYYYMMDDHHmmss').format('YYYY-MM-DD H:mm:ss'))
     ]
 
     const fields = []
     for (const f of optionsMapper.filter(om => !om.skip)) {
         const value = f.getter ? f.getter(image) : image.options[f.key]
+        const same = currentOptions[f.key] === value
+        const className = f.compare ? (same ? 'same' : 'diff') : ''
         fields.push(
             <div key={f.key} onClick={() => f.onClick && f.onClick(image) } className='info-line'>
-                <span className='key'>{f.label}:</span>{value}
+                <span className='key'>{f.label}:</span><span className={className}>{value?.toString()}</span>
             </div>
         )
     }
@@ -148,9 +136,19 @@ export default function Spotlight() {
                     {otherImage && <Button onClick={() => dispatch(swapImages())}>Swap</Button>}
                 </div>
             </div>
-            <div className="previous" onClick={() => dispatch(selectPrevious())}></div>
+            <div className="previous" onClick={() => dispatch(selectPrevious())}>
+                <svg viewBox="0 0 500 500" className="triangle">
+                    <polygon points="0,250 500,0 500,500" />
+                    Sorry, your browser does not support inline SVG.
+                </svg>
+            </div>
             <img alt={image.name} src={'/myapi/img/' + image.name} onClick={() => dispatch(setSelectedImage(undefined))} />
-            <div className="next" onClick={() => dispatch(selectNext())}></div>
+            <div className="next" onClick={() => dispatch(selectNext())}>
+                <svg viewBox="0 0 500 500" className="triangle">
+                    <polygon points="0,0 500,250, 0,500" />
+                    Sorry, your browser does not support inline SVG.
+                </svg>
+            </div>
         </div>
     )
 }
@@ -169,7 +167,10 @@ function parsePrompt(prompt: string): string[] {
         if (currentToken === '' && c === ' ') continue
         if (c === '(') inParentesis += 1
         if (c === ')') inParentesis -= 1;
-        if (inParentesis < 0) throw new Error('idk, ' + currentToken + c)
+        if (inParentesis < 0) { 
+            Logger.softError('Check prompt, too many closing parentesis')
+            return []
+        }
         openParentesis = inParentesis > 0
         currentToken += c
     }
@@ -180,8 +181,29 @@ function parsePrompt(prompt: string): string[] {
 function imageSizeString(i: Txt2ImgResult): string {
     let str = i.options.image_width + ' x ' + i.options.image_height;
     if (i.options.upscaler && i.options.upscaler !== 'None') {
-        const extra = ` (upscaled to ${i.options.image_width * i.options.upscaler_scale} x ${i.options.image_height * i.options.upscaler_scale})`
+        const upscaledWidth = Math.round(i.options.image_width * i.options.upscaler_scale)
+        const upscaledHeight = Math.round(i.options.image_height * i.options.upscaler_scale)
+        const extra = ` (upscaled to ${upscaledWidth} x ${upscaledHeight})`
         str += extra
     }
     return str
 }
+
+function field(key: string, label: string, getter: getterType): OptionMap {
+    return ({ key, label, getter, compare: false })
+}
+function compareField(key: string, label: string): OptionMap {
+    return ({ key, label, compare: true })
+}
+
+interface OptionMap {
+    key: string
+    label: string
+    skip?: boolean
+    compare?: boolean
+    getter?: getterType
+    onClick?: onClickType
+}
+
+type getterType = ((i: Txt2ImgResult) => string | number)
+type onClickType = ((i: Txt2ImgResult) => void)
