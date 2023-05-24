@@ -110,7 +110,7 @@ export default function Gallery() {
         return (
             <div key={i.name} className={classes}>
                 {/* {groupByBatch && (<div className="batch-tag">{batchNumber}</div>)} */}
-                <img alt={i.name} src={'/myapi/img/' + i.name} onClick={() => onImageClicked(i)} />
+                <img loading="lazy" alt={i.name} src={'/myapi/img/' + i.name} onClick={() => onImageClicked(i)} />
                 <div className={i.name == deleteName ? 'btn-del hot' : 'btn-del'} title={`Delete image.\nPress twice.`} onClick={() => onDeleteClick(i)}></div>
             </div>
         )
