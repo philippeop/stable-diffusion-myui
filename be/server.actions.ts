@@ -132,7 +132,7 @@ function optionsToRequest(options: MyUiOptions): Txt2ImgRequest {
     request.seed = +options.seed || -1
     request.subseed = -1
     request.subseed_strength = 0
-    request.restore_faces = false
+    request.restore_faces = options.restore_faces
     request.tiling = false
     request.styles = []
     request.batch_size = options.image_count || 1

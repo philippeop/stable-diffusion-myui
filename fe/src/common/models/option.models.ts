@@ -1,12 +1,13 @@
 
 export interface BaseMyUiOptions {
-    model?: string;
-    image_width: number;
-    image_height: number;
-    batches?: number;
-    image_count?: number;
+    model?: string
+    image_width: number
+    image_height: number
+    batches?: number
+    image_count?: number
     /** SEED INPUT NOT RESULT SEED */
-    seed: string;
+    seed: string
+    restore_faces: boolean
 }
 
 export interface ModelMyUiOptions {
@@ -23,7 +24,7 @@ export interface ModelMyUiOptions {
 }
 
 export interface MyUiOptions extends BaseMyUiOptions, ModelMyUiOptions {
-    [key: string]: string | number | undefined;
+    [key: string]: string | number | boolean | undefined;
  }
 
 export const default_options: MyUiOptions = {
@@ -43,6 +44,7 @@ export const default_options: MyUiOptions = {
     image_count: 1,
     clip_skip: 1,
     seed: '-1',
+    restore_faces: false
 }
 export interface SdApiOptions {
     samples_save: boolean

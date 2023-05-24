@@ -7,7 +7,7 @@ import { useAppDispatch, useAppSelector } from '../store/store';
 import {
     setModel, setPrompt, setNegative, setCfgScale,
     setUpscaler, setUpscalerScale, setUpscalerSteps, setUpscalerDenoise,
-    setSampler, setSteps, setImageWidth, setImageHeight, setBatches, setImageCount, setClipSkip, setSeed
+    setSampler, setSteps, setImageWidth, setImageHeight, setBatches, setImageCount, setClipSkip, setSeed, setRestoreFaces
 } from '../store/options.slice'
 import OptionInput from './optioninput';
 
@@ -32,6 +32,7 @@ export default function Options() {
     const steps = useAppSelector((state) => state.options.steps)
     const clip_skip = useAppSelector((state) => state.options.clip_skip)
     const seed = useAppSelector((state) => state.options.seed)
+    const restore_faces = useAppSelector((state) => state.options.restore_faces)
     const upscaler = useAppSelector((state) => state.options.upscaler ?? "None")
     const upscaler_scale = useAppSelector((state) => state.options.upscaler_scale)
     const upscaler_denoise = useAppSelector((state) => state.options.upscaler_denoise)
@@ -117,6 +118,8 @@ export default function Options() {
                     <input type="number" id="image_height" value={image_height} onChange={event => { dispatch(setImageHeight(+event.target.value)) }} min="100" max="10000" step="10" />
                     <label htmlFor="seed">Seed:</label>
                     <OptionInput id="seed" type="number?" value={seed} dimOnEmpty={true} onChange={(value) => dispatch(setSeed(value))} />
+                    <label htmlFor="restore_faces">Restore faces:</label>
+                    <input type="checkbox" id="restore_faces" checked={restore_faces} onChange={event => { dispatch(setRestoreFaces(event.currentTarget.checked)) }} />
                 </div>
                 <div className="col">
                     <label htmlFor="sample_select">Sampler:</label>
