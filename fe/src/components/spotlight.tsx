@@ -29,7 +29,7 @@ export default function Spotlight() {
     const seedOnUi = useAppSelector(s => s.options.seed)
 
     useEffect(() => {
-        Logger.debug('Spotlight selectedImage changed to', image)
+        Logger.debug('Spotlight selectedImage changed to', image?.name)
         if (image) {
             const optionKeys = Object.keys(image.options)
             const extra = optionKeys.filter(k => !optionsMapper.find(om => om.key === k))

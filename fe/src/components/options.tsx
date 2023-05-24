@@ -57,7 +57,7 @@ export default function Options() {
 
             if (options && models) {
                 const modelFromOptions = models.find(m => m.title === options.sd_model_checkpoint)
-                if(modelFromOptions) {
+                if (modelFromOptions) {
                     console.log('Model is', modelFromOptions.model_name)
                     dispatch(setModel(modelFromOptions.model_name))
                 }
@@ -95,7 +95,7 @@ export default function Options() {
 
     return (
         <fieldset className="options-container" disabled={disableModelSelect}>
-            { !models && !samplers && <h3>Web UI API appears to be unavailable</h3>}
+            {!models && !samplers && <h3>Web UI API appears to be unavailable</h3>}
             <div className="row">
             </div>
             <div className="row options">
