@@ -1,3 +1,4 @@
+import fs from 'fs'
 import { Low } from "lowdb"
 import { JSONFile } from "lowdb/node"
 import { Logger } from "./../fe/src/common/logger.js"
@@ -26,16 +27,13 @@ export class MyUiDb {
         this.loadAndUpgrade()
     }
 
-    public get data(): Data {
-        return this.db.data;
-    }
-
-    async save() {
+    async save(note = '') {
         try {
             await this.db.write()
         }
         catch (e) {
-            Logger.error('Failed writing to DB', e)
+            await this.db.read()
+            Logger.softError('Failed writing to DB', note, e)
         }
     }
 
@@ -53,16 +51,39 @@ export class MyUiDb {
         // await this.save()
     }
 
-    async createImage(name: string, options: MyUiOptions, params: Txt2ImgParameters, info: string) {
+    listImages() {
+        return this.db.data.images
+    }
+
+    async createImage(imageData: string, options: MyUiOptions, params: Txt2ImgParameters, info: string) {
+        const name = this.saveImage(imageData)
         const original_info = this.convertAndFilterInfo(info)
-        this.db.data.images.push({ 
-            name, 
+        this.db.data.images.push({
+            name,
             options,
             seed: original_info.seed,
-            timestamp: original_info.job_timestamp, 
-            original_parameters: params, 
-            original_info })
-        this.save()
+            timestamp: original_info.job_timestamp,
+            original_parameters: params,
+            original_info
+        })
+        await this.save('createImage')
+    }
+
+    private saveImage = (imageData: string): string => {
+        const folder = './imgs'
+        if (!fs.existsSync(folder)) fs.mkdirSync(folder)
+        const name = `${Date.now().toString(36)}.png`
+        // More: randomStr = Math.random().toString(36).substring(2, 8)
+        const path = `${folder}/${name}`;
+        fs.writeFileSync(path, imageData, 'base64')
+        return name
+    }
+
+    async deleteImage(name: string) {
+        Logger.log('Deleting entry name', name)
+        const index = this.db.data.images.findIndex((i) => i.name === name)
+        this.db.data.images.splice(index, 1)
+        await this.save('deleteImage')
     }
 
     private convertAndFilterInfo(info: string): Txt2ImgInfo {

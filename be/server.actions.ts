@@ -28,7 +28,7 @@ export class Actions {
         }
         this.worker.onLast = async () => this.msgg.sendTxt2ImgDone()
 
-        const t = setInterval(async () => {
+        setInterval(async () => {
             if (!this.worker.running) {
                 this.msgg.sendProgress({
                     running: false,
@@ -53,7 +53,7 @@ export class Actions {
 
     public listImagesAction = (_: Request, res: Response) => {
         Logger.debug('listImagesAction')
-        const images = this.db.data.images.map(this.imageMetadataToImageResult)
+        const images = this.db.listImages().map(this.imageMetadataToImageResult)
         res.status(200).send(images)
     }
 
@@ -63,7 +63,7 @@ export class Actions {
         if (!options) Logger.error('Received no options for txt2imgAction')
         res.status(200).send()
 
-        this.worker.addTask(this.handleTxt2ImgAction, options)
+        this.worker.addTask(() => this.handleTxt2ImgAction(options))
         this.msgg.sendNotice(`Queued prompt, ${this.worker.running ? 'working' : 'idle'}, ${this.worker.tasks.length} in queue`)
     }
 
@@ -84,9 +84,8 @@ export class Actions {
             }
 
             Logger.debug(`Got ${data.images.length} images for batch ${i + 1}, processing`)
-            for (const [, imageData] of data.images.entries()) {
-                const name = this.saveImage(imageData)
-                await this.db.createImage(name, options, data.parameters, data.info)
+            for (const imageData of data.images) {
+                await this.db.createImage(imageData, options, data.parameters, data.info)
             }
             this.msgg.sendTxt2ImgNewImage(i + 1, batches)
         }
@@ -137,22 +136,21 @@ export class Actions {
         }
     }
 
-    public deleteAction = (req: Request, res: Response) => {
+    public deleteAction = async (req: Request, res: Response) => {
         const name = req.params['identifier']
         Logger.debug('getImageAction', name)
         const path = `./imgs/${name}`
-        const index = this.db.data.images.findIndex((i) => i.name === name)
-        if (index !== -1 && fs.existsSync(path)) {
-            Logger.log('Deleting entry name', name)
-            this.db.data.images.splice(index, 1)
-            this.db.save()
+        
+        try {
+            await this.db.deleteImage(name)
             Logger.log('Deleting file at', path)
-            fs.rmSync(path)
-            res.send()
+            if (fs.existsSync(path)) fs.rmSync(path)
             this.msgg.sendImageDelete(name)
+            res.status(200).send()
         }
-        else {
-            res.status(200).send({ message: 'Image not found ' + path })
+        catch (err) {
+            Logger.softError('Unable to delete image', name, 'from database,', err)
+            res.status(500).send()
         }
     }
 
@@ -201,16 +199,6 @@ export class Actions {
 
         request.denoising_strength = options.upscaler_denoise
         return request
-    }
-
-    private saveImage = (imageData: string): string => {
-        const folder = './imgs'
-        if (!fs.existsSync(folder)) fs.mkdirSync(folder)
-        const name = `${Date.now().toString(36)}.png`
-        // More: randomStr = Math.random().toString(36).substring(2, 8)
-        const path = `${folder}/${name}`;
-        fs.writeFileSync(path, imageData, 'base64')
-        return name
     }
 
     private imageMetadataToImageResult = (meta: ImageMetadata): Txt2ImgResult => {
