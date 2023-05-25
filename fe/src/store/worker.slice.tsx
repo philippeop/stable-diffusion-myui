@@ -27,10 +27,10 @@ export const workerSlice = createSlice({
             state.progress = backendStatus
         },
         addMessage(state, action) {
-            if(state.messages.length >= 10) {
-                state.messages.shift()
-            }
-            state.messages.push(`${moment().format('H:mm:ss')} - ${action.payload}`)
+            state.messages = [...state.messages, `${moment().format('H:mm:ss')} - ${action.payload}`]
+        },
+        clearMessages(state) {
+            state.messages = []
         }
     }
 });
@@ -38,7 +38,8 @@ export const workerSlice = createSlice({
 export const {
     setWorking,
     setProgress,
-    addMessage
+    addMessage,
+    clearMessages
 } = workerSlice.actions
 
 export default workerSlice.reducer;

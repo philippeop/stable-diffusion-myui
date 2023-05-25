@@ -6,7 +6,7 @@ import { Logger } from "@common/logger";
 import { SdApi } from '@/services/sdapi.service';
 import { MyApi } from "@/services/myapi.service";
 import { useAppDispatch, useAppSelector } from "@/store/store";
-import { setWorking } from "@/store/worker.slice";
+import { setWorking, clearMessages } from "@/store/worker.slice";
 import { setLastSend } from '@/store/options.slice';
 
 let id: NodeJS.Timer
@@ -22,6 +22,7 @@ export default function Actions() {
         const filteredOptions = { ... options, last_sent: undefined}
         console.log('prompting with following options:', filteredOptions)
         MyApi.txt2img(filteredOptions).then(() => dispatch(setLastSend(filteredOptions)) && dispatch(setWorking(true)))
+        dispatch(clearMessages())
     }, [dispatch, working, options])
 
     function skip() {
