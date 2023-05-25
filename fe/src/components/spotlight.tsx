@@ -72,10 +72,10 @@ export default function Spotlight() {
     }, [dispatch])
 
     const onDeleteBtnClick = useCallback(() => {
-        if(!image) return
+        if (!image) return
         MyApi.deleteImage(image)
         dispatch(deleteImage(image))
-    }, [dispatch, image] )
+    }, [dispatch, image])
 
     if (!image) return (<></>)
 
@@ -92,7 +92,9 @@ export default function Spotlight() {
         compareField('cfg_scale', 'CFG Scale'),
         compareField('clip_skip', 'CLIP skip'),
         compareField('restore_faces', 'Restore face'),
-        field('generated', 'Generated', i => moment(i.timestamp, 'YYYYMMDDHHmmss').format('YYYY-MM-DD H:mm:ss'))
+        field('generated', 'Generated', i => moment(i.timestamp, 'YYYYMMDDHHmmss').format('YYYY-MM-DD H:mm:ss')),
+        compareField('seed', 'Seed', i => i.seed, i => loadSeed(i.seed)),
+        compareField('ensd', 'ENSD'),
     ]
 
     const fields = []
@@ -101,11 +103,21 @@ export default function Spotlight() {
         const same = currentOptions[f.key] === value
         const className = f.compare ? (same ? 'same' : 'diff') : ''
         fields.push(
-            <div key={f.key} onClick={() => f.onClick && f.onClick(image) } className='info-line'>
+            <div key={f.key} onClick={() => f.onClick && f.onClick(image)} className='info-line'>
                 <span className='key'>{f.label}:</span><span className={className}>{value?.toString()}</span>
             </div>
         )
     }
+
+    const tokenDefToPill = (pd: TokenDef, isNegative: boolean) => {
+        // assuming 0.5 is min, weight is 0.5-1.5
+        const size = 100 * pd.weight + '%'
+        const weight = 400 * pd.weight
+        return (<Pill key={pd.token} style={{ fontSize: size, fontWeight: weight }} negative={isNegative} >{pd.token}</Pill>)
+    }
+
+    const promptPills = parsePrompt(image.options.prompt).map(pd => tokenDefToPill(pd, false)) // image.options.prompt
+    const negativePills = parsePrompt(image.options.negative).map(pd => tokenDefToPill(pd, true)) // image.options.negative
 
     const sameSeed = image.seed.toString() === currentOptions.seed.toString()
     const sameEnsd = image.options.ensd === currentOptions.ensd
@@ -114,22 +126,14 @@ export default function Spotlight() {
         <div className='spotlight-overlay'>
             <div className='info'>
                 <div className="prompt-container" onClick={() => loadPrompt(image.options.prompt)}>
-                    {parsePrompt(image.options.prompt).map((s, i) => <Pill key={i}>{s}</Pill>)}
-                    {/* <div>{image.options.prompt}</div> */}
-                    { image.options.prompt === prompt && <div className="positive">(Same)</div> }
+                    {promptPills}
+                    {image.options.prompt === prompt && <div className="positive">(Same)</div>}
                 </div>
                 <div className="negative-container" onClick={() => loadNegative(image.options.negative)}>
-                    {parsePrompt(image.options.negative).map((s, i) => <Pill key={i} negative={true}>{s}</Pill>)}
-                    {/* <div>{image.options.negative}</div> */}
-                    { image.options.negative === negative && <div className="positive">(Same)</div> }
+                    {negativePills}
+                    {image.options.negative === negative && <div className="positive">(Same)</div>}
                 </div>
                 {...fields}
-                <div onClick={() => loadSeed(image.seed) } className='info-line'>
-                    <span className="key">Seed:</span><span className={sameSeed ? 'same' : 'diff'}>{image.seed}</span>
-                </div>
-                <div className='info-line'>
-                    <span className="key">ENSD:</span><span className={sameEnsd ? 'same' : 'diff'}>{image.options.ensd}</span>
-                </div>
                 <div className="compare-controls row">
                     <ClickTwiceButton styleIdle='positive' styleHot='negative' onClickTwice={() => onDeleteBtnClick()}>
                         Delete
@@ -155,29 +159,29 @@ export default function Spotlight() {
     )
 }
 
-function parsePrompt(prompt: string): string[] {
-    const tokens = [];
-    let currentToken = '';
-    let openParentesis = false
-    let inParentesis = 0
-    for (const c of prompt) {
-        if (c === ',' && !openParentesis && inParentesis === 0) {
-            tokens.push(currentToken.trim())
-            currentToken = ''
-            continue
-        }
-        if (currentToken === '' && c === ' ') continue
-        if (c === '(') inParentesis += 1
-        if (c === ')') inParentesis -= 1;
-        if (inParentesis < 0) { 
-            Logger.softError('Check prompt, too many closing parentesis')
-            return []
-        }
-        openParentesis = inParentesis > 0
-        currentToken += c
-    }
-    if (currentToken) tokens.push(currentToken)
-    return tokens;
+interface TokenDef {
+    token: string
+    weight: number
+}
+function parsePrompt(prompt: string): TokenDef[] {
+    // Contributed by ChatGPT
+    const regex = /\((.*?)\)/g;
+    const parenTokens = prompt.match(regex) || [];
+    const sanitizedPrompt = prompt.replace(regex, '');
+
+    const processedTokens = parenTokens.map((token) => {
+        const weightMatch = token.match(/:(\d+(\.\d+)?)/);
+        const weight = weightMatch ? parseFloat(weightMatch[1]) : 1;
+        const roundedWeight = Math.round(weight * 10) / 10 // tweaked here to round to first decimal after point
+        return { token: token.trim(), weight: roundedWeight };
+    });
+
+    const tokens = sanitizedPrompt.split(',')
+        .map((token) => ({ token: token.trim(), weight: 1 }))
+        .filter((tokenObj) => tokenObj.token !== '');
+
+    return tokens.concat(processedTokens);
+    // End contribution
 }
 
 function imageSizeString(i: Txt2ImgResult): string {
@@ -194,8 +198,8 @@ function imageSizeString(i: Txt2ImgResult): string {
 function field(key: string, label: string, getter: getterType): OptionMap {
     return ({ key, label, getter, compare: false })
 }
-function compareField(key: string, label: string): OptionMap {
-    return ({ key, label, compare: true })
+function compareField(key: string, label: string, getter?: getterType, onClick?: onClickType): OptionMap {
+    return ({ key, label, compare: true, getter, onClick })
 }
 
 interface OptionMap {
