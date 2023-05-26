@@ -114,7 +114,7 @@ export default function Options() {
         window.location.reload()
     }, [dispatch])
 
-    const prompt_rows = 6
+    const prompt_rows = 9
 
     return (
         <fieldset className="options-container" disabled={disableModelSelect}>
@@ -128,16 +128,16 @@ export default function Options() {
                         <option key={-1} value="">None</option>
                         {models.map((m, idx) => <option key={idx} value={m.model_name}>{m.model_name}</option>)}
                     </select>
-                    <label htmlFor="batches">Batches</label>
-                    <input type="number" id="batches" value={batches} onChange={event => { dispatch(setBatches(+event.target.value)) }} min="1" max="100" />
-                    <label htmlFor="cfg_scale" title={cfg_scale_title} > CFG Scale</label >
-                    <input type="number" id="cfg_scale" className={sameClass(cfg_scale, last_sent?.cfg_scale)} value={cfg_scale} onChange={event => { dispatch(setCfgScale(+event.target.value)) }} min="1" max="100" />
+                    <label htmlFor="batches">Batches: {batches}</label>
+                    <input type="range" id="batches" value={batches} onChange={event => { dispatch(setBatches(+event.target.value)) }} min="1" max="10" />
+                    <label htmlFor="cfg_scale" title={cfg_scale_title}>CFG Scale: {cfg_scale}</label >
+                    <input type="range" id="cfg_scale" className={sameClass(cfg_scale, last_sent?.cfg_scale)} value={cfg_scale} onChange={event => { dispatch(setCfgScale(+event.target.value)) }} min="1" max="10" />
                 </div >
                 <div className="col">
                     <label htmlFor="image_width">Width:</label>
-                    <input type="number" id="image_width" className={sameClass(image_width, last_sent?.image_width)} value={image_width} onChange={event => { dispatch(setImageWidth(+event.target.value)) }} min="100" max="10000" step="10" />
+                    <OptionInput id="image_width" type="number" classNameExtra={sameClass(image_width, last_sent?.image_width)} value={image_width} onChange={(value) => dispatch(setImageWidth(+value))} />
                     <label htmlFor="image_height">Height:</label>
-                    <input type="number" id="image_height" className={sameClass(image_height, last_sent?.image_height)} value={image_height} onChange={event => { dispatch(setImageHeight(+event.target.value)) }} min="100" max="10000" step="10" />
+                    <OptionInput id="image_height" type="number" classNameExtra={sameClass(image_height, last_sent?.image_height)} value={image_height} onChange={(value) => dispatch(setImageHeight(+value))} />
                     <label htmlFor="seed">Seed:</label>
                     <OptionInput id="seed" type="number?" classNameExtra={sameClass(seed, last_sent?.seed)} value={seed} emptyValue={-1} dimOnEmpty={true} onChange={(value) => dispatch(setSeed(value))} />
                     <OptionInput id="ensd" type="number?" classNameExtra={sameClass(ensd, last_sent?.ensd)} value={ensd} emptyValue={0} dimOnEmpty={true} onChange={(value) => dispatch(setEnsd(value))} />
@@ -148,11 +148,11 @@ export default function Options() {
                         {samplers.map((s, idx) => <option key={idx} value={s.name}>{s.name}</option>)}
                     </select>
                     <label htmlFor="steps_input">Sampling Steps</label>
-                    <input type="number" id="steps_input" className={sameClass(steps, last_sent?.steps)} value={steps} onChange={event => { dispatch(setSteps(+event.target.value)) }} min="5" max="50" />
-                    <label htmlFor="clip_skip_input">CLIP Skip</label>
-                    <input type="number" id="clip_skip_input" className={sameClass(clip_skip, last_sent?.clip_skip)} value={clip_skip} onChange={event => { dispatch(setClipSkip(+event.target.value)) }} min="1" max="5" />
+                    <OptionInput id="steps_input" type="number?" classNameExtra={sameClass(steps, last_sent?.steps)} value={steps} emptyValue={20} dimOnEmpty={true} hideEmpty={false} onChange={v => { dispatch(setSteps(+v)) }} />
+                    <label htmlFor="clip_skip_input">CLIP Skip: {clip_skip}</label>
+                    <input type="range" id="clip_skip_input" className={sameClass(clip_skip, last_sent?.clip_skip)} value={clip_skip} onChange={event => { dispatch(setClipSkip(+event.target.value)) }} min="1" max="5" />
                     <label htmlFor="restore_faces">Restore faces:</label>
-                    <input type="checkbox" id="restore_faces" checked={restore_faces} onChange={event => { dispatch(setRestoreFaces(event.currentTarget.checked)) }} />
+                    <input type="checkbox" id="restore_faces" className={sameClass(restore_faces, last_sent?.restore_faces)} checked={restore_faces} onChange={event => { dispatch(setRestoreFaces(event.currentTarget.checked)) }} />
                 </div >
                 <div className="col">
                     <label htmlFor="upscaler_select">Upscaler:</label>
@@ -171,7 +171,7 @@ export default function Options() {
             <div className="row prompts">
                 <div className="col p100">
                     <textarea value={prompt} className={sameClass(prompt, last_sent?.prompt)} placeholder="Prompt.." onChange={event => dispatch(setPrompt(event.target.value))} rows={prompt_rows} />
-                    <textarea value={negative} className={sameClass(negative, last_sent?.negative)} placeholder="Negative prompt.." onChange={event => dispatch(setNegative(event.target.value))} rows={prompt_rows / 2} />
+                    <textarea value={negative} className={sameClass(negative, last_sent?.negative)} placeholder="Negative prompt.." onChange={event => dispatch(setNegative(event.target.value))} rows={2} />
                     <div className="row">
                         <Button className="load-prompt" onClick={() => loadPrompt()}>Load Prompt</Button>
                         <Button className="load-prompt" onClick={() => loadBaseline()}>Load Baseline</Button>

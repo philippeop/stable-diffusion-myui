@@ -44,7 +44,9 @@ $breakpoint-large: 1600px;
 
 .options,
 .prompts {
-    border: 10px solid black;
+    textarea {
+        resize: vertical;
+    }
 }
 
 body {
@@ -128,6 +130,8 @@ body {
     margin: auto;
     border-right: $divider;
     border-left: $divider;
+    padding: 5px;
+    padding-bottom: 0;
 
     .options {
         gap: 1em;
@@ -366,6 +370,7 @@ body {
 
 .same {
     color: #072;
+    accent-color: #072;
     option {
         color: black;
     }
@@ -373,6 +378,7 @@ body {
 
 .diff {
     color: #db5100;
+    accent-color: #db5100;
     option {
         color: black;
     }
