@@ -18,6 +18,7 @@ export function ClickTwice(props: ClickTwiceProps) {
             setClickedOnce(true)
             return () => clearTimeout(timer.current)
         }
+        setClickedOnce(false)
         clearTimeout(timer.current)
         onClickTwice()
     }, [clickedOnce])
