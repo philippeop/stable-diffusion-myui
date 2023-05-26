@@ -10,13 +10,14 @@ interface OptionInputProps {
     id: string
     type: InputTypeString
     value: InputType
-    dimOnEmpty: boolean
-    emptyValue: number
+    dimOnEmpty?: boolean
+    emptyValue?: number
+    hideEmpty?: boolean
     classNameExtra: string
     onChange: (newValue: string) => void
 }
 export default function OptionInput(props: OptionInputProps) {
-    const { id, type, value, classNameExtra, dimOnEmpty, emptyValue, onChange } = props
+    const { id, type, value, classNameExtra, dimOnEmpty = false, emptyValue = 0, hideEmpty = true, onChange } = props
     const internalOnInput = useCallback((event: ChangeEvent<HTMLInputElement>) => {
         const value = event.currentTarget.value
         if(!isValid(value, type)) {
@@ -37,7 +38,7 @@ export default function OptionInput(props: OptionInputProps) {
     })
     Logger.log(classes)
     return (
-        <input type="text" id={id} className={classes} value={value === emptyValue ? '' : value} onInput={internalOnInput}></input>
+        <input type="text" id={id} className={classes} value={ (hideEmpty && value === emptyValue) ? '' : value} onInput={internalOnInput}></input>
     )
 }
 
