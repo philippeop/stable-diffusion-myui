@@ -93,7 +93,7 @@ body {
     padding: 0 1em;
     border-bottom: $divider;
     display: flex;
-    flex-direction: row;
+    max-height: 30vh;
 
     @media (max-width: $breakpoint-med) {
         flex-direction: column;
@@ -127,7 +127,6 @@ body {
 .options-container {
     border: none;
     width: 60%;
-    margin: auto;
     border-right: $divider;
     border-left: $divider;
     padding: 5px;
@@ -155,12 +154,11 @@ body {
     .log {
         height: 10%;
         flex-grow: 1;
-        overflow-y: scroll;
+        overflow-y: auto;
     }
 
     .action-row {
         display: flex;
-        flex-direction: row;
         height: 20%;
     }
 
@@ -344,6 +342,7 @@ body {
         }
 
         .info-line {
+            user-select: text;
             color: #d8d8d8;
             line-height: 1.4em;
             filter: drop-shadow(1px 1px 6px black);
@@ -454,6 +453,7 @@ textarea {
     background-color: #135809;
     padding: 0.25em 0.4em;
     border-radius: 15px;
+    user-select: text;
 
     &.negative {
         border: 2px solid rgb(48, 5, 5);

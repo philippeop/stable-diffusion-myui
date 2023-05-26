@@ -52,24 +52,26 @@ export default function GeneratorProgress() {
         Logger.debug('Websocket status changed to', wsStatus)
     }, [wsStatus])
 
-    if (!progress) return <></>
-    if (!progress.running) return <div>Idle, {progress.tasks} tasks</div>
-
-    const timeStared = moment(progress.started, 'YYYYMMDDHHmmss')
-    const timeTaken = moment().diff(timeStared, 'seconds')
-    const image = progress.image ? <img alt="Image being generated" src={'data:image/png;base64,' + progress.image} /> : <></>
-    const progressElement = (
-        <Fragment>
-            <div>Working, {progress.tasks} tasks, started {timeStared?.format('H:mm:ss')}</div>
-            <div>{timeTaken} seconds elapsed</div>
-            { progress.skipped ? <div>Skipping...</div> : <div>Progress: {progress.progress} %</div> }
-            <div className="image-container">{image}</div>
-        </Fragment>
-    )
+    let inner;
+    if (!progress) inner = <></>
+    else if (!progress.running) inner = <div>Idle, {progress.tasks} tasks</div>
+    else {
+        const timeStared = moment(progress.started, 'YYYYMMDDHHmmss')
+        const timeTaken = moment().diff(timeStared, 'seconds')
+        const image = progress.image ? <img alt="Image being generated" src={'data:image/png;base64,' + progress.image} /> : <></>
+        inner = (
+            <Fragment>
+                <div>Working, {progress.tasks} tasks, started {timeStared?.format('H:mm:ss')}</div>
+                <div>{timeTaken} seconds elapsed</div>
+                {progress.skipped ? <div>Skipping...</div> : <div>Progress: {progress.progress} %</div>}
+                <div className="image-container">{image}</div>
+            </Fragment>
+        )
+    }
 
     return <div className="progress-container">
         <span>{wsStatus}</span>
-        {progressElement}
+        {inner}
     </div>
 }
 
