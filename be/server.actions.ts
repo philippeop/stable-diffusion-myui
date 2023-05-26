@@ -135,13 +135,33 @@ export class Actions {
         }
     }
 
+    public tagImageAction = async (req: Request, res: Response) => {
+        const type = req.params['type']
+        const name = req.params['identifier']
+        Logger.debug('tagImageAction', name, type)
+        
+        if(!this.db.isValidType(type)) {
+            this.msgg.sendNotice('Bad type received, ' + type)
+            return res.status(400).send(false)
+        }
+        const typeNumber = +type
+        await this.db.tagImage(name, typeNumber)
+        this.msgg.sendNotice(`Tagged ${name} with type ${type}`)
+        res.status(200).send(true)
+    }
+
     public deleteAction = async (req: Request, res: Response) => {
         const name = req.params['identifier']
         Logger.debug('getImageAction', name)
         const path = `./imgs/${name}`
         
         try {
-            await this.db.deleteImage(name)
+            const success = await this.db.deleteImage(name)
+            if(!success) {
+                this.msgg.sendNotice(`Can't delete image ${name}`)
+                res.status(400).send(false)
+                return 
+            }
             Logger.log('Deleting file at', path)
             if (fs.existsSync(path)) fs.rmSync(path)
             this.msgg.sendImageDelete(name)
@@ -205,7 +225,8 @@ export class Actions {
             name: meta.name,
             options: meta.options,
             timestamp: meta.timestamp,
-            seed: meta.seed
+            seed: meta.seed,
+            tag: meta.tag
         }
     }
 }

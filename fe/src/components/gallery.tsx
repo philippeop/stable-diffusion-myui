@@ -21,7 +21,6 @@ export default function Gallery() {
     const selectedImage = useAppSelector((state) => state.images.selectedImage)
     const modelFilter = useAppSelector((state) => state.images.modelFilter)
     const newestFirst = useAppSelector((state) => state.images.newestFirst)
-    // const [ groupByBatch, setGroupByBatch ] = useState<boolean>(false)
     const promptFilter = useAppSelector((state) => state.images.promptFilter)
     const compareImage = useAppSelector((state) => state.images.compareWithImage)
     const [isSlideshow, setIsSlideshow] = useState<boolean>(false)
@@ -73,26 +72,13 @@ export default function Gallery() {
     }, [dispatch])
 
     const deleteImageAction = useCallback((image: Txt2ImgResult) => {
+        if (image.tag > 0) {
+            alert('Can\'t delete highlight image')
+            return
+        }
         MyApi.deleteImage(image)
         dispatch(deleteImage(image))
     }, [dispatch])
-
-    const modelFilterChanged = useCallback((event: FormEvent<HTMLSelectElement>) => {
-        dispatch(setModelFilter(event.currentTarget.value))
-    }, [dispatch])
-
-    const newestFirstChanged = useCallback((event: FormEvent<HTMLInputElement>) => {
-        dispatch(setNewestFirst(!!event.currentTarget.checked))
-    }, [dispatch])
-
-    const promptFilterChanged = useCallback((event: FormEvent<HTMLInputElement>) => {
-        dispatch(setPromptFilter(event.currentTarget.value))
-    }, [dispatch])
-
-    // const groupByBatchChanged = useCallback((event: FormEvent<HTMLInputElement>) => {
-    //     // dispatch(setPromptFilter(event.currentTarget.value))
-    //     setGroupByBatch(!!event.currentTarget.checked)
-    // }, [setGroupByBatch])
 
     const slideshow = useCallback(() => {
         Logger.debug('Gallery: Starting slideshow')
@@ -100,20 +86,40 @@ export default function Gallery() {
         setIsSlideshow(true)
     }, [dispatch, images])
 
+    const tagImage = useCallback((image: Txt2ImgResult) => {
+        (async () => {
+            if (!image) return
+            let type = -1
+            switch (image.tag) {
+                case undefined:
+                case 0: type = 1; break
+                case 1: type = 2; break
+                default: case 2: type = 0; break
+            }
+            const result = await MyApi.tagImage(image, type)
+            if (result === true) {
+                dispatch(refreshImages())
+            }
+        })()
+    }, [dispatch])
+
     const galleryItems = (images).map((i, idx) => {
         const classes = classNames({
             'gallery-item': true,
-            'compare': compareImage && (compareImage.name === i.name)
+            'compare': compareImage && (compareImage.name === i.name),
+            'highlight1': i.tag === 1,
+            'highlight2': i.tag === 2
         })
-        
-        const parts = i.timestamp.split('_')
-        const timestamp = parts[0]
-        const batchNumber = +(parts[1])
+
         return (
             <div key={i.name} className={classes}>
-                {/* {groupByBatch && (<div className="batch-tag">{batchNumber}</div>)} */}
+                <ClickTwice styleIdle={'btn hi t-' + i.tag } styleHot='btn hi hot' onClickTwice={() => tagImage(i)} >
+                    <div title={`Change highlight.\nPress twice.`}></div>
+                </ClickTwice>
+                { (!i.options.upscaler || i.options.upscaler === 'None') && <div className='btn ns'>NS</div> }
+                { (i.options.upscaler && i.options.upscaler !== 'None') && <div className='btn us'>US</div> }
                 <img loading="lazy" alt={i.name} src={'/myapi/img/' + i.name} onClick={() => onImageClicked(i)} />
-                <ClickTwice styleIdle='btn-del' styleHot='btn-del hot' onClickTwice={() => deleteImageAction(i)} >
+                <ClickTwice styleIdle='btn del' styleHot='btn del hot' onClickTwice={() => deleteImageAction(i)} >
                     <div title={`Delete image.\nPress twice.`}></div>
                 </ClickTwice>
             </div >
@@ -125,18 +131,18 @@ export default function Gallery() {
             <div className="gallery-filters">
                 <div>
                     <label htmlFor="model_select">Filter by model:</label>
-                    <select id="model_select" value={modelFilter} onChange={modelFilterChanged}>
+                    <select id="model_select" value={modelFilter} onChange={e => dispatch(setModelFilter(e.currentTarget.value))}>
                         <option key="All" value="all">All</option>
                         {models.map(m => <option key={m.filename} value={m.model_name}>{m.title.replace('.safetensors', '')}</option>)}
                     </select>
                 </div>
                 <div>
                     <label htmlFor="newest_first">Newest first:</label>
-                    <input type="checkbox" id="newest_first" checked={newestFirst} onChange={newestFirstChanged}></input>
+                    <input type="checkbox" id="newest_first" checked={newestFirst} onChange={e => dispatch(setNewestFirst(!!e.currentTarget.checked))}></input>
                 </div>
                 <div>
                     <label htmlFor="prompt_filter">Filter by prompt:</label>
-                    <input type="text" id="prompt_filter" value={promptFilter} onChange={promptFilterChanged}></input>
+                    <input type="text" id="prompt_filter" value={promptFilter} onChange={e => dispatch(setPromptFilter(e.currentTarget.value))}></input>
                 </div>
                 {/* <div>
                     <label htmlFor="groupby_batch">Group by batch:</label>

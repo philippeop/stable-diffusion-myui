@@ -73,7 +73,12 @@ export default function Spotlight() {
 
     const onDeleteBtnClick = useCallback(() => {
         if (!image) return
+        if (image.tag > 0) {
+            alert('Can\'t delete highlit image')
+            return
+        }
         MyApi.deleteImage(image)
+        dispatch(selectPrevious(false))
         dispatch(deleteImage(image))
     }, [dispatch, image])
 

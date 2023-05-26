@@ -16,6 +16,7 @@ export interface ImageMetadata {
     options: MyUiOptions
     original_parameters: Txt2ImgParameters
     original_info: Txt2ImgInfo
+    tag: number
 }
 
 export class MyUiDb {
@@ -64,7 +65,8 @@ export class MyUiDb {
             seed: original_info.seed,
             timestamp: original_info.job_timestamp,
             original_parameters: params,
-            original_info
+            original_info,
+            tag: 0
         })
         await this.save('createImage')
     }
@@ -79,11 +81,30 @@ export class MyUiDb {
         return name
     }
 
+    async tagImage(name: string, type: number) {
+        const image = this.db.data.images.find(i => i.name === name)
+        if(!image) { Logger.error('Image', name ,'not found'); return }
+        if(!this.isValidType(type)) Logger.error('Type', type, 'unexpected')
+        image.tag = type
+        await this.save('tagImage')
+    }
+
     async deleteImage(name: string) {
         Logger.log('Deleting entry name', name)
         const index = this.db.data.images.findIndex((i) => i.name === name)
+        const image = this.db.data.images[index]
+        if(image.tag > 0) {
+            Logger.debug('Tried to delete tagged image', name)
+            return false
+        }
         this.db.data.images.splice(index, 1)
         await this.save('deleteImage')
+        return true
+    }
+
+    public isValidType(type: string | number) {
+        if(typeof type === 'string') return [ '0', '1', '2' ].includes(type)
+        return [ 0, 1, 2 ].includes(type)
     }
 
     private convertAndFilterInfo(info: string): Txt2ImgInfo {

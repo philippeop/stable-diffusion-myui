@@ -13,6 +13,11 @@ const txt2img = (options: MyUiOptions) => {
     // return tryGet('/myapi/test')
 }
 
+const tagImage = (image: Txt2ImgResult, type: number) => {
+    if(!image) throw new Error('tagImage received undefined image')
+    return tryGet<boolean>(`/myapi/tag/${type}/${image.name}`)
+}
+
 const deleteImage = (image: Txt2ImgResult) => {
     try {
         return axiosInstance.delete('/myapi/img/' + image.name)
@@ -26,5 +31,6 @@ const deleteImage = (image: Txt2ImgResult) => {
 export const MyApi = {
     list,
     txt2img,
+    tagImage,
     deleteImage,
 }

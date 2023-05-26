@@ -32,6 +32,10 @@ export class MessagingService {
         this.send('delete', name)
     }
 
+    public sendTagged(name: string, type: number) {
+        this.send('tagged', { name, type })
+    }
+
     public sendProgress(progress: BackendStatus) {
         this.send('progress', progress)
     }

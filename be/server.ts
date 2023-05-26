@@ -38,6 +38,7 @@ export class Main {
         this.app.post('/myapi/txt2img', this.actions.txt2imgAction)
         this.app.get('/myapi/img/:identifier', this.actions.getImageAction)
         this.app.get('/myapi/img', this.actions.listImagesAction)
+        this.app.get('/myapi/tag/:type/:identifier', this.actions.tagImageAction)
         this.app.delete('/myapi/img/:identifier', this.actions.deleteAction)
         // this.app.get('/myapi/test', (_, res) => { })
     }

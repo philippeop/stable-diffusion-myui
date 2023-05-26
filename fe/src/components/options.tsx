@@ -159,7 +159,6 @@ export default function Options() {
                     <select className={"form-control " + sameClass(upscaler, last_sent?.upscaler)} id="upscaler_select" value={upscaler} onChange={onUpscalerChanged}>
                         {upscalers.map((u, idx) => <option key={idx} value={u.name}>{u.name}</option>)}
                     </select >
-                    {/* <ng-container * ngIf="upscaler?.name != 'None'" > */}
                     <label htmlFor="upscaler_scale">Upscaler Scale:</label>
                     <input type="number" id="upscaler_scale" className={sameClass(upscaler_scale, last_sent?.upscaler_scale)} value={upscaler_scale} onChange={event => { dispatch(setUpscalerScale(+event.target.value)) }} min="1.5" max="4" step="0.25" />
                     <label htmlFor="upscaler_steps">Upscaler Steps:</label>

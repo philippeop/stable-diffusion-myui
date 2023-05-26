@@ -6,6 +6,7 @@ export interface Txt2ImgResult {
     timestamp: string
     /** REAL SEED */
     seed: number
+    tag: number
 }
 
 export interface BackendStatus {
