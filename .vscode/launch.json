@@ -7,7 +7,7 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Launch thing",
+            "name": "backend",
             "cwd": "${workspaceFolder}/be",
             "skipFiles": [
                 "<node_internals>/**"

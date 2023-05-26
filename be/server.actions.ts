@@ -38,7 +38,6 @@ export class Actions {
             else {
                 const progress = await this.getProgress()
                 if (!progress) return // should always be progress (even 0) if webui works
-
                 this.msgg.sendProgress({
                     running: true,
                     tasks: this.worker.tasks.length,

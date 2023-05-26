@@ -35,7 +35,7 @@ export class Main {
     }
 
     setupRouting() {
-        this.app.post('/myapi/v1/txt2img', this.actions.txt2imgAction)
+        this.app.post('/myapi/txt2img', this.actions.txt2imgAction)
         this.app.get('/myapi/img/:identifier', this.actions.getImageAction)
         this.app.get('/myapi/img', this.actions.listImagesAction)
         this.app.delete('/myapi/img/:identifier', this.actions.deleteAction)

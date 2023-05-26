@@ -9,7 +9,7 @@ const list = async () => {
 }
 
 const txt2img = (options: MyUiOptions) => {
-    return tryPost<void>('/myapi/v1/txt2img', options)
+    return tryPost<void>('/myapi/txt2img', options)
     // return tryGet('/myapi/test')
 }
 
