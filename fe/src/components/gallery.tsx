@@ -48,7 +48,7 @@ export default function Gallery() {
             clearInterval(timerHandle.current)
             timerHandle.current = setInterval(() => {
                 console.log('Slideshow tick')
-                dispatch(selectNext())
+                dispatch(selectNext(true))
             }, 4000)
             return () => clearInterval(timerHandle.current);
         }

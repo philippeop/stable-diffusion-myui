@@ -7,7 +7,7 @@ import { Logger } from '@common/logger';
 import { MyApi } from '@/services/myapi.service';
 import { useAppDispatch, useAppSelector } from '../store/store'
 import { deleteImage, selectNext, selectPrevious, setCompareWithImage, setSelectedImage, swapImages } from '../store/images.slice'
-import { setSeed } from '../store/options.slice'
+import { OptionStore, setSeed } from '../store/options.slice'
 import Pill from './pill'
 import Button from './button';
 import { ClickTwiceButton } from './clicktwice';
@@ -36,13 +36,13 @@ export default function Spotlight() {
             Logger.log('Spotlight: onKeyUp captured for image', image)
             event.stopPropagation()
             event.preventDefault()
-            dispatch(selectNext())
+            dispatch(selectNext(true))
         }
         if (event.key === 'ArrowLeft') {
             Logger.log('Spotlight: onKeyUp captured for image', image)
             event.stopPropagation()
             event.preventDefault()
-            dispatch(selectPrevious())
+            dispatch(selectPrevious(true))
         }
     }, [dispatch, image])
 
@@ -87,7 +87,7 @@ export default function Spotlight() {
     const optionsMapper: OptionMap[] = [
         field('name', 'Name', i => i.name),
         compareField('model', 'Model'),
-        field('size', 'Size', imageSizeString),
+        compareField2('size', 'Size', imageSizeString, (i, o) => o.image_height == i.options.image_height && o.image_width == i.options.image_width),
         compareField('sampler', 'Sampler'),
         compareField('steps', 'Steps'),
         compareField('upscaler', 'Upscaler'),
@@ -105,7 +105,7 @@ export default function Spotlight() {
     const fields = []
     for (const f of optionsMapper.filter(om => !om.skip)) {
         const value = f.getter ? f.getter(image) : image.options[f.key]
-        const same = currentOptions[f.key] === value
+        const same = f.sameFn ? f.sameFn(image, currentOptions) : currentOptions[f.key] === value
         const className = f.compare ? (same ? 'same' : 'diff') : ''
         fields.push(
             <div key={f.key} onClick={() => f.onClick && f.onClick(image)} className='info-line'>
@@ -147,14 +147,14 @@ export default function Spotlight() {
                     {otherImage && <Button onClick={() => dispatch(swapImages())}>Swap</Button>}
                 </div>
             </div>
-            <div className="previous" onClick={() => dispatch(selectPrevious())}>
+            <div className="previous" onClick={() => dispatch(selectPrevious(true))}>
                 <svg viewBox="0 0 500 500" className="triangle">
                     <polygon points="0,250 500,0 500,500" />
                     Sorry, your browser does not support inline SVG.
                 </svg>
             </div>
             <img alt={image.name} src={'/myapi/img/' + image.name} onClick={() => dispatch(setSelectedImage(undefined))} />
-            <div className="next" onClick={() => dispatch(selectNext())}>
+            <div className="next" onClick={() => dispatch(selectNext(true))}>
                 <svg viewBox="0 0 500 500" className="triangle">
                     <polygon points="0,0 500,250, 0,500" />
                     Sorry, your browser does not support inline SVG.
@@ -177,16 +177,24 @@ function parsePrompt(prompt: string): TokenDef[] {
     const processedTokens = parenTokens.map((token) => {
         const weightMatch = token.match(/:(\d+(\.\d+)?)/);
         const weight = weightMatch ? parseFloat(weightMatch[1]) : 1;
-        const roundedWeight = Math.round(weight * 10) / 10 // tweaked here to round to first decimal after point
-        return { token: token.trim(), weight: roundedWeight };
+        return { token: token.trim(), weight: weight };
     });
 
     const tokens = sanitizedPrompt.split(',')
         .map((token) => ({ token: token.trim(), weight: 1 }))
         .filter((tokenObj) => tokenObj.token !== '');
 
-    return tokens.concat(processedTokens);
-    // End contribution
+    const allTokens = tokens.concat(processedTokens);
+    // End contribution (unfortunately)
+
+    // This is not perfect
+    // , one carrot with a (red hat:1.5) dancing,  = [ one carrot with a  dancing [index:-1], (red hat:1.5) ]
+    const tokensWithIndexes = allTokens.map((t) => {
+        const index = prompt.indexOf(t.token)
+        return { ...t, index }
+    })
+    tokensWithIndexes.sort((a, b) => a.index - b.index)
+    return tokensWithIndexes
 }
 
 function imageSizeString(i: Txt2ImgResult): string {
@@ -207,14 +215,20 @@ function compareField(key: string, label: string, getter?: getterType, onClick?:
     return ({ key, label, compare: true, getter, onClick })
 }
 
+function compareField2(key: string, label: string, getter: getterType, sameFn: sameFnType): OptionMap {
+    return ({ key, label, compare: true, getter, sameFn })
+}
+
 interface OptionMap {
     key: string
     label: string
     skip?: boolean
     compare?: boolean
     getter?: getterType
+    sameFn?: sameFnType
     onClick?: onClickType
 }
 
 type getterType = ((i: Txt2ImgResult) => string | number)
+type sameFnType = ((i: Txt2ImgResult, o: OptionStore) => boolean)
 type onClickType = ((i: Txt2ImgResult) => void)
