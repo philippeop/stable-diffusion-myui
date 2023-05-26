@@ -31,6 +31,10 @@ export default function App() {
         setShowLoras(!showLoras)
     }, [loras, showLoras])
 
+    function copyLora(l: Lora) {
+        navigator.clipboard.writeText(`<lora:${l.alias ?? l.name}:1>`).then(() => Logger.debug('Copied lora', l.alias ?? l.name, 'to clipboard'))
+    }
+
     const loraElements = loras.map(l => {
         const label = l.name === l.alias ? l.name : `${l.name} (alias: ${l.alias})`
         const loraDef = config.lora_definitions.find(t => t.name === l.name)
@@ -38,7 +42,7 @@ export default function App() {
         if (loraDef) {
             title = (loraDef.comment ? (loraDef.comment + '\n') : '') + loraDef.keywords.join(', ')
         }
-        return <li key={l.name} title={title}>{label}</li>
+        return <li key={l.name} title={title} onClick={() => copyLora(l)}>{label}</li>
     })
     const embedElements = embeddings.map(e => {
         return <li key={e.name}>{e.name}{e.skipped && ' (skipped)'}</li>
