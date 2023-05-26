@@ -32,13 +32,13 @@ export default function Gallery() {
             const allModels = await SdApi.getModels()
             if (!allModels) return
             const modelsWithImages = allModels
-                .filter(m => {
+                .map(m => {
                     const count = allimages.filter(i => i.options.model === m.model_name).length
-                m.title = m.title + ' (' + count + ')'
-                return count !== 0
-            })
-            .sort((a, b) => a.title.localeCompare(b.title))
-            
+                    m.title = m.title + ' (' + count + ')'
+                    return m
+                })
+                .sort((a, b) => a.title.localeCompare(b.title))
+
             setModels(modelsWithImages)
         })()
     }, [allimages])
