@@ -3,8 +3,9 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 import { Txt2ImgResult } from "@common/models/myapi.models";
 import { MyApi } from "@/services/myapi.service";
+import { localstorageLoad, localstorageSave } from './store';
 
-interface FilterStore {
+export interface FilterStore {
     modelFilter: string
     newestFirst: boolean
     promptFilter?: string
@@ -25,16 +26,16 @@ interface ImageDataStore {
 interface ImageStore extends ImageDataStore, FilterStore { }
 
 // Actual Slice
-const defaultState: ImageStore = {
+export const default_images: ImageStore = {
+    ...default_filter,
     status: 'idle',
     list: [],
     filteredList: [],
     selectedImage: undefined,
-    ...loadFilters()
 }
 export const imagesSlice = createSlice({
     name: 'images',
-    initialState: defaultState,
+    initialState: default_images,
     reducers: {
         setImages(state, action) {
             const images = action.payload;
@@ -52,19 +53,23 @@ export const imagesSlice = createSlice({
             state.compareWithImage = state.selectedImage
             state.selectedImage = comp
         },
-        selectPrevious(state) {
+        selectPrevious(state, action) {
+            const loop = action.payload || action.payload === undefined
             const img = state.selectedImage
             const list = state.filteredList
             if (!img) return
             let index = list.findIndex(i => i.name === img.name) - 1
+            if (!loop && index < 0) return
             if (index < 0) index = list.length - 1
             state.selectedImage = list[index]
         },
-        selectNext(state) {
+        selectNext(state, action) {
+            const loop = action.payload || action.payload === undefined
             const img = state.selectedImage;
             const list = state.filteredList;
             if (!img) return
             let index = list.findIndex(i => i.name === img.name) + 1
+            if (!loop && index >= list.length) return
             if (index >= list.length) index = 0
             state.selectedImage = list[index]
         },
@@ -72,23 +77,20 @@ export const imagesSlice = createSlice({
             const image = action.payload;
             state.list = state.list.filter(i => i.name !== image.name)
             state.filteredList = state.filteredList.filter(i => i.name !== image.name)
-            if(state.selectedImage?.name === image.name) state.selectedImage = undefined
+            if (state.selectedImage?.name === image.name) state.selectedImage = undefined
         },
 
         setModelFilter(state, action) {
             state.modelFilter = action.payload
             state.filteredList = createFilteredList(state)
-            saveFilters(state)
         },
         setNewestFirst(state, action) {
             state.newestFirst = action.payload
             state.filteredList = createFilteredList(state)
-            saveFilters(state)
         },
         setPromptFilter(state, action) {
             state.promptFilter = action.payload
             state.filteredList = createFilteredList(state)
-            saveFilters(state)
         }
     },
     // extraReducers(builder) {
@@ -147,23 +149,14 @@ function createFilteredList(state: ImageStore): Txt2ImgResult[] {
         .sort((i1, i2) => imageCompare(i1, i2, state.newestFirst))
 }
 
-function saveFilters(state: ImageStore): void {
-    if (typeof window === 'undefined') return
+export function saveFilters(state: ImageStore): void {
     const obj: FilterStore = {
         modelFilter: state.modelFilter,
         newestFirst: state.newestFirst
     }
-    const json = JSON.stringify(obj);
-    localStorage.setItem('filters', json);
+    localstorageSave('filters', obj)
 }
 
-function loadFilters(): FilterStore {
-    if (typeof window === 'undefined') return default_filter
-    try {
-        const json = localStorage.getItem('filters');
-        return (json ? (JSON.parse(json)) : default_filter) as FilterStore
-    } catch (err) {
-        console.error(err)
-        return default_filter
-    }
+export function loadFilters(): FilterStore {
+    return localstorageLoad<FilterStore>('filters', default_filter)
 }
