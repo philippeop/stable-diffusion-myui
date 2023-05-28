@@ -4,7 +4,7 @@ import useWebSocket, { ReadyState } from "react-use-websocket";
 
 import { useAppDispatch } from "../store/store"
 import { Logger } from '@common/logger';
-import { addMessage, setWorking } from "@/store/worker.slice";
+import { addMessage } from "@/store/worker.slice";
 import { refreshImages } from "@/store/images.slice";
 import { BackendStatus } from '@/common/models/myapi.models';
 import moment from 'moment';
@@ -43,7 +43,6 @@ export default function GeneratorProgress() {
         else if (data.type === 'progress' && typeof data.data === 'object') {
             const newProgress = data.data as BackendStatus
             setProgress(newProgress)
-            setWorking(newProgress.running)
         }
     }, [dispatch, lastMessage])
 

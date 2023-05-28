@@ -18,13 +18,11 @@ export const workerSlice = createSlice({
     name: 'worker',
     initialState: default_worker,
     reducers: {
-        setWorking(state, action) {
-            state.working = !!action.payload
-        },
         setProgress(state, action) {
-            const backendStatus = { ...action.payload}
+            const backendStatus = { ...action.payload} as BackendStatus
             delete backendStatus.image
             state.progress = backendStatus
+            state.working = backendStatus.running
         },
         addMessage(state, action) {
             state.messages = [...state.messages, `${moment().format('H:mm:ss')} - ${action.payload}`]
@@ -36,7 +34,6 @@ export const workerSlice = createSlice({
 });
 
 export const {
-    setWorking,
     setProgress,
     addMessage,
     clearMessages

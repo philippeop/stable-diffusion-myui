@@ -6,10 +6,9 @@ import { Logger } from "@common/logger";
 import { SdApi } from '@/services/sdapi.service';
 import { MyApi } from "@/services/myapi.service";
 import { useAppDispatch, useAppSelector } from "@/store/store";
-import { setWorking, clearMessages } from "@/store/worker.slice";
+import { clearMessages } from "@/store/worker.slice";
 import { setLastSend } from '@/store/options.slice';
 
-let id: NodeJS.Timer
 export default function Actions() {
     Logger.debug('Rendering Actions')
     const dispatch = useAppDispatch()
@@ -25,14 +24,9 @@ export default function Actions() {
     }, [dispatch, working, options])
 
     function skip() {
-        if (!working) return
         console.log('skipping')
         SdApi.skip().then()
     }
-
-    useEffect(() => {
-        if (!working) clearInterval(id)
-    }, [working])
 
     const classesSubmit = classNames({
         'button': true
