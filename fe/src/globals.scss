@@ -216,11 +216,11 @@ body {
             }
 
             &.highlight1 {
-                border: 1px solid yellow;
+                border: 2px solid yellow;
             }
 
             &.highlight2 {
-                border: 1px solid green;
+                border: 2px solid green;
             }
 
             img {
@@ -229,7 +229,7 @@ body {
                 max-height: 100%;
             }
 
-            .btn {
+            .tag {
                 content: '✖';
                 position: absolute;
                 top: 0.7em;
@@ -237,10 +237,8 @@ body {
                 width: 1em;
                 border: 1px solid black;
                 border-radius: 0;
-                line-height: 1.3em;
-                font-weight: bold;
 
-                &.hi {
+                &.type {
                     left: 0.7em;
                     background-color: darkblue;
                     &.t-1 {
@@ -256,7 +254,7 @@ body {
                     }
                 }
 
-                &.del {
+                &.delete {
                     right: 0.7em;
                     background-color: rgb(80, 0, 0);
     
@@ -266,16 +264,21 @@ body {
                     }
                 }
 
-                &.ns {
-                    border-color: transparent;
+                &.nonscaled, &.upscaled {
+                    line-height: 1.1em;
+                    font-weight: bold;
+                    width: 1.5em;
+                    border-color: black;
                     left: 1.9em;
-                    color: red;
+                    background-color: black;
+                    text-align: center;
                 }
 
-                &.us {
-                    border-color: transparent;
-                    left: 1.9em;
+                &.upscaled {
                     color: green;
+                }
+                &.nonscaled {
+                    color: red;
                 }
             }
         }

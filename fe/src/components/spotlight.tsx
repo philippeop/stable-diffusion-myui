@@ -140,7 +140,7 @@ export default function Spotlight() {
                 </div>
                 {...fields}
                 <div className="compare-controls row">
-                    <ClickTwiceButton styleIdle='positive' styleHot='negative' onClickTwice={() => onDeleteBtnClick()}>
+                    <ClickTwiceButton style='positive' onClickTwice={() => onDeleteBtnClick()}>
                         Delete
                     </ClickTwiceButton>
                     <Button onClick={() => dispatch(setCompareWithImage(image))}>Stash image as compare image</Button>

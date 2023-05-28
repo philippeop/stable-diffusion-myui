@@ -123,15 +123,21 @@ export default function Gallery() {
             'highlight2': i.tag === 2
         })
 
+        const isUpscaled = i.options.upscaler && i.options.upscaler !== 'None'
+        const upscaledTagClass = classNames({
+            'tag': true,
+            'nonscaled': !isUpscaled,
+            'upscaled': isUpscaled,
+        })
+
         return (
             <div key={i.name} className={classes}>
-                <ClickTwice styleIdle={'btn hi t-' + i.tag } styleHot='btn hi hot' onClickTwice={() => tagImage(i)} >
+                <ClickTwice style={'tag type t-' + i.tag } onClickTwice={() => tagImage(i)} >
                     <div title={`Change highlight.\nPress twice.`}></div>
                 </ClickTwice>
-                { (!i.options.upscaler || i.options.upscaler === 'None') && <div className='btn ns'>NS</div> }
-                { (i.options.upscaler && i.options.upscaler !== 'None') && <div className='btn us'>US</div> }
+                <div className={upscaledTagClass}>{ isUpscaled ? 'US' : 'NS' }</div>
                 <img loading="lazy" alt={i.name} src={'/myapi/img/' + i.name} onClick={() => onImageClicked(i)} />
-                <ClickTwice styleIdle='btn del' styleHot='btn del hot' onClickTwice={() => deleteImageAction(i)} >
+                <ClickTwice style='tag delete' onClickTwice={() => deleteImageAction(i)} >
                     <div title={`Delete image.\nPress twice.`}></div>
                 </ClickTwice>
             </div >

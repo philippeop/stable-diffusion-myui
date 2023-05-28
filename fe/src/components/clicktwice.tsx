@@ -3,12 +3,11 @@ import { PropsWithChildren, useCallback, useRef, useState } from 'react'
 
 interface ClickTwiceProps extends PropsWithChildren {
     id?: string
-    styleIdle: string
-    styleHot: string
+    style: string
     onClickTwice: () => void
 }
 export function ClickTwice(props: ClickTwiceProps) {
-    const { styleIdle, styleHot, onClickTwice, children } = props;
+    const { style , onClickTwice, children } = props;
 
     const timer = useRef<NodeJS.Timeout>()
     const [clickedOnce, setClickedOnce] = useState<boolean>()
@@ -24,8 +23,8 @@ export function ClickTwice(props: ClickTwiceProps) {
     }, [clickedOnce])
 
     const className = classNames({
-        [styleIdle]: !clickedOnce,
-        [styleHot]: clickedOnce
+        [style]: true,
+        'hot': clickedOnce
     })
 
     return (<div className={className} onClick={() => onClick()}>
@@ -34,10 +33,10 @@ export function ClickTwice(props: ClickTwiceProps) {
 }
 
 export function ClickTwiceButton(props: ClickTwiceProps) {
-    const { id, styleIdle, styleHot, onClickTwice, children } = props;
+    const { id, style, onClickTwice, children } = props;
 
     return (
-        <ClickTwice id={id} styleIdle={'button ' + styleIdle} styleHot={'button ' + styleHot} onClickTwice={onClickTwice}>
+        <ClickTwice id={id} style={'button ' + style} onClickTwice={onClickTwice}>
             <div className="button-inner">
                 {children}
             </div>
