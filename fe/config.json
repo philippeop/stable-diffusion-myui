@@ -39,6 +39,9 @@
             "deformed",
             "mutation",
             "extra limbs",
+            "poorly drawn hands",
+            "missing fingers",
+            "bad hands",
             "text",
             "watermark"
         ],
@@ -49,7 +52,8 @@
             "baddream"
         ],
         "typos": [
-            "photrealistic"
+            "photrealistic",
+            "tatto"
         ]
     }
 }

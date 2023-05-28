@@ -46,7 +46,7 @@ export default interface Txt2ImgRequest {
 }
 
 export interface OverrideSettings { 
-    [key: string]: string | boolean | number;
+    [key: string]: string | boolean | number | undefined;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface

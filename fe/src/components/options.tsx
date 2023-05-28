@@ -106,7 +106,7 @@ export default function Options() {
 
     const loadBaseline = useCallback(async () => {
         dispatch(setPrompt('(masterpiece, best quality, realistic, photorealistic, sharp focus:1.5)'))
-        dispatch(setNegative('(low quality:1.5), (worst quality:1.5), low resolution, ugly, blurry, bad anatomy'))
+        dispatch(setNegative('(low quality, worst quality:1.5), low resolution, ugly, blurry, bad anatomy'))
     }, [dispatch])
 
     const refreshModels = useCallback(async () => {
