@@ -18,17 +18,16 @@ export default function Actions() {
     const messages = useAppSelector((s) => s.worker.messages)
 
     const submit = useCallback(() => {
-        // if (working) return
         const filteredOptions = { ... options, last_sent: undefined}
         console.log('prompting with following options:', filteredOptions)
-        MyApi.txt2img(filteredOptions).then(() => dispatch(setLastSend(filteredOptions)) && dispatch(setWorking(true)))
+        MyApi.txt2img(filteredOptions).then(() => dispatch(setLastSent(filteredOptions)))
         dispatch(clearMessages())
     }, [dispatch, working, options])
 
     function skip() {
         if (!working) return
         console.log('skipping')
-        SdApi.skip() //.then(() => dispatch(setWorking(true)))
+        SdApi.skip().then()
     }
 
     useEffect(() => {
@@ -57,7 +56,3 @@ export default function Actions() {
         </div>
     )
 }
-
-// function validatePrompt(prompt: string) {
-
-// }

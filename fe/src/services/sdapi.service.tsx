@@ -68,6 +68,9 @@ const setModel = async (model: Model) => {
 const refreshModels = async () => {
     return tryPost<void>('/sdapi/v1/refresh-checkpoints')
 }
+const refreshLoras = async () => {
+    return tryPost<void>('/sdapi/v1/refresh-loras')
+}
 
 
 const skip = () => {
@@ -83,4 +86,5 @@ export const SdApi = {
     setModel,
     skip,
     refreshModels,
+    refreshLoras,
 }

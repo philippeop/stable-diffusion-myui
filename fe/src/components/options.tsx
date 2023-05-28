@@ -111,6 +111,7 @@ export default function Options() {
 
     const refreshModels = useCallback(async () => {
         await SdApi.refreshModels()
+        await SdApi.refreshLoras()
         window.location.reload()
     }, [dispatch])
 
