@@ -11,6 +11,7 @@ import { deleteImage, setSelectedImage, setModelFilter, setNewestFirst, selectNe
 import { SdApi } from '@/services/sdapi.service';
 import { Model } from '@/common/models/sdapi.models';
 import { ClickTwice } from './clicktwice';
+import { setLastSent  } from '@/store/options.slice';
 
 export default function Gallery() {
     Logger.debug('Rendering Gallery')
@@ -23,10 +24,12 @@ export default function Gallery() {
     const newestFirst = useAppSelector((state) => state.images.newestFirst)
     const promptFilter = useAppSelector((state) => state.images.promptFilter)
     const compareImage = useAppSelector((state) => state.images.compareWithImage)
+    const last_sent = useAppSelector((state) => state.options.last_sent)
     const [isSlideshow, setIsSlideshow] = useState<boolean>(false)
     const timerHandle = useRef<NodeJS.Timer>()
     const [models, setModels] = useState<Model[]>([])
 
+    // Get list of models from images
     useEffect(() => {
         (async () => {
             const allModels = await SdApi.getModels()
@@ -43,6 +46,14 @@ export default function Gallery() {
         })()
     }, [allimages])
 
+    // Set last_sent to first visible image is there is no last sent (usually the case on a F5)
+    useEffect(() => {
+        if(last_sent === undefined && images.length) {
+            dispatch(setLastSent(images[0].options))
+        }
+    }, [images])
+
+    // Slideshow feature
     useEffect(() => {
         if (isSlideshow) {
             clearInterval(timerHandle.current)
@@ -56,11 +67,12 @@ export default function Gallery() {
             clearInterval(timerHandle.current)
         }
     }, [dispatch, isSlideshow])
-
+    // Slideshow stop on unselect image
     useEffect(() => {
         if (!selectedImage) setIsSlideshow(false)
     }, [selectedImage])
 
+    // Get images on load
     useEffect(() => {
         console.log('Rendering Gallery: getting images')
         dispatch(refreshImages())
