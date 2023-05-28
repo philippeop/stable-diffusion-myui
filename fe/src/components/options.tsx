@@ -1,5 +1,5 @@
 'use client';
-import { FormEvent, useCallback, useEffect, useState } from 'react'
+import { FormEvent, Fragment, useCallback, useEffect, useState } from 'react'
 import { Logger } from '@common/logger';
 import { SdApi } from '../services/sdapi.service'
 import { Model, Sampler, Upscaler } from '@common/models/sdapi.models'
@@ -160,12 +160,14 @@ export default function Options() {
                     <select className={"form-control " + sameClass(upscaler, last_sent?.upscaler)} id="upscaler_select" value={upscaler} onChange={onUpscalerChanged}>
                         {upscalers.map((u, idx) => <option key={idx} value={u.name}>{u.name}</option>)}
                     </select >
+                    { upscaler !== 'None' && (<Fragment>
                     <label htmlFor="upscaler_scale">Upscaler Scale:</label>
                     <input type="number" id="upscaler_scale" className={sameClass(upscaler_scale, last_sent?.upscaler_scale)} value={upscaler_scale} onChange={event => { dispatch(setUpscalerScale(+event.target.value)) }} min="1.5" max="4" step="0.25" />
                     <label htmlFor="upscaler_steps">Upscaler Steps:</label>
                     <input type="number" id="upscaler_steps" className={sameClass(upscaler_steps, last_sent?.upscaler_steps)} value={upscaler_steps} onChange={event => { dispatch(setUpscalerSteps(+event.target.value)) }} min="1" max="100" />
-                    <label htmlFor="upscaler_denoise">Denoise strength:</label>
-                    <input type="number" id="upscaler_denoise" className={sameClass(upscaler_denoise, last_sent?.upscaler_denoise)} value={upscaler_denoise} onChange={event => { dispatch(setUpscalerDenoise(+event.target.value)) }} min="0" max="1" step="0.05" />
+                    <label htmlFor="upscaler_denoise">Denoise strength: {upscaler_denoise}</label>
+                    <input type="range" id="upscaler_denoise" className={sameClass(upscaler_denoise, last_sent?.upscaler_denoise)} value={upscaler_denoise} onChange={event => { dispatch(setUpscalerDenoise(+event.target.value)) }} min="0" max="1" step="0.05" />
+                    </Fragment>)}
                 </div >
             </div >
             <div className="row prompts">
