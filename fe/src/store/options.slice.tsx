@@ -74,7 +74,7 @@ export const optionsSlice = createSlice({
     name: root_key,
     initialState: default_options as OptionStore,
     reducers: {
-        setLastSend(state, action) { state.last_sent = action.payload },
+        setLastSent(state, action) { state.last_sent = action.payload },
         setModel(state, action) {
             const loadedState = loadModelOptions(action.payload);
             state.model = action.payload
@@ -115,7 +115,7 @@ export const optionsSlice = createSlice({
 });
 
 export const {
-    setLastSend,
+    setLastSent,
     setModel,
     setPrompt, setNegative,
     setCfgScale,

@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import classNames from "classnames";
 
 import { Logger } from "@common/logger";
@@ -7,7 +7,7 @@ import { SdApi } from '@/services/sdapi.service';
 import { MyApi } from "@/services/myapi.service";
 import { useAppDispatch, useAppSelector } from "@/store/store";
 import { clearMessages } from "@/store/worker.slice";
-import { setLastSend } from '@/store/options.slice';
+import { setLastSent } from '@/store/options.slice';
 
 export default function Actions() {
     Logger.debug('Rendering Actions')
