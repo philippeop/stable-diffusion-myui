@@ -180,6 +180,8 @@ export class Actions {
     }
 
     private optionsToRequest = (options: MyUiOptions): Txt2ImgRequest => {
+        const error = checkOptions(options)
+        if (error) Logger.error('Something wrong with the options:', error)
         const request = {} as Txt2ImgRequest;
         request.prompt = options.prompt.replace(/ \n/g, ' ').replace(/\n/g, ' ')
         request.negative_prompt = options.negative.replace(/ \n/g, ' ').replace(/\n/g, ' ')
@@ -192,13 +194,13 @@ export class Actions {
         request.steps = options.steps;
         request.save_images = false;
         request.send_images = true;
-        request.height = options.image_height || 512;
-        request.width = options.image_width || 512;
+        request.height = options.image_height
+        request.width = options.image_width
         request.cfg_scale = options.cfg_scale;
-        request.seed = +options.seed || -1
+        request.seed = options.seed || -1
         request.subseed = -1
         request.subseed_strength = 0
-        request.restore_faces = options.restore_faces
+        request.restore_faces = !!options.restore_faces
         request.tiling = false
         request.styles = []
         request.batch_size = 1
@@ -206,7 +208,7 @@ export class Actions {
         request.enable_hr = !!options.upscaler && options.upscaler !== 'None'
         request.override_settings = {
             'CLIP_stop_at_last_layers': options.clip_skip,
-            'eta_noise_seed_delta': options.ensd ?? 0
+            'eta_noise_seed_delta': options.ensd || undefined
         }
         if (options.upscaler) {
             request.hr_upscaler = options.upscaler
@@ -214,9 +216,9 @@ export class Actions {
             request.hr_resize_x = request.width * options.upscaler_scale
             request.hr_resize_y = request.height * options.upscaler_scale
             request.hr_second_pass_steps = options.upscaler_steps
+            request.denoising_strength = options.upscaler_denoise
         }
 
-        request.denoising_strength = options.upscaler_denoise
         return request
     }
 
@@ -229,4 +231,17 @@ export class Actions {
             tag: meta.tag
         }
     }
+}
+
+function checkOptions(options: MyUiOptions) {
+    if (!options.prompt.length) return 'prompt' 
+    if (!options.steps) return 'steps'
+    if (typeof options.seed !== 'number') return 'seed'
+    if (typeof options.restore_faces !== 'boolean') return 'restore_faces'
+    if (typeof options.cfg_scale !== 'number' ||options.cfg_scale < 1 || options.cfg_scale > 10) return 'cfg_scale'
+    if (typeof options.image_height !== 'number' || options.image_height < 100) return 'image_height'
+    if (typeof options.image_width !== 'number' || options.image_width < 100) return 'image_width'
+    if (typeof options.upscaler_scale !== 'number' || options.upscaler_scale < 1) return 'upscaler_scale'
+    if (typeof options.upscaler_steps !== 'number' || options.upscaler_steps < 1) return 'upscaler_steps'
+    if (typeof options.upscaler_denoise !== 'number' || options.upscaler_denoise < 0 || options.upscaler_denoise > 1) return 'upscaler_denoise'
 }
