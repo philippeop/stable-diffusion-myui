@@ -70,7 +70,14 @@ export class Actions {
         this.msgg.sendNotice(`Started, doing ${options.batches} generations`)
         const batches = options.batches ?? 1
         options.batches = 1
-        const payload = this.optionsToRequest(options)
+        let payload
+        try {
+            payload = this.optionsToRequest(options)
+        }
+        catch (e) {
+            this.msgg.sendTxt2ImgError('Error converting options: ' + (e as Error).message)
+            return
+        }
 
         for (let i = 0; i < (batches ?? 1); i++) {
             Logger.debug(`Doing batch ${i + 1} / ${batches}`)
@@ -181,10 +188,10 @@ export class Actions {
 
     private optionsToRequest = (options: MyUiOptions): Txt2ImgRequest => {
         const error = checkOptions(options)
-        if (error) Logger.error('Something wrong with the options:', error)
+        if (error) throw new Error(error)
         const request = {} as Txt2ImgRequest;
-        request.prompt = options.prompt.replace(/ \n/g, ' ').replace(/\n/g, ' ')
-        request.negative_prompt = options.negative.replace(/ \n/g, ' ').replace(/\n/g, ' ')
+        request.prompt = sanitizePrompt(options.prompt)
+        request.negative_prompt = sanitizePrompt(options.negative)
         // Logger.debug('Prompt before:', JSON.stringify(options.prompt))
         // Logger.debug('Negative before:', JSON.stringify(options.negative))
         // Logger.log('Prompt after:', JSON.stringify(request.prompt))
@@ -235,6 +242,8 @@ export class Actions {
 
 function checkOptions(options: MyUiOptions) {
     if (!options.prompt.length) return 'prompt' 
+    const patt = /\)\s+\(/g;
+    if (patt.test(options.prompt)) return 'prompt whitespace'
     if (!options.steps) return 'steps'
     if (typeof options.seed !== 'number') return 'seed'
     if (typeof options.restore_faces !== 'boolean') return 'restore_faces'
@@ -244,4 +253,10 @@ function checkOptions(options: MyUiOptions) {
     if (typeof options.upscaler_scale !== 'number' || options.upscaler_scale < 1) return 'upscaler_scale'
     if (typeof options.upscaler_steps !== 'number' || options.upscaler_steps < 1) return 'upscaler_steps'
     if (typeof options.upscaler_denoise !== 'number' || options.upscaler_denoise < 0 || options.upscaler_denoise > 1) return 'upscaler_denoise'
+}
+
+function sanitizePrompt(prompt: string) {
+    return prompt
+        .replace(/\n+/g, ' ')
+        .replace(/\s+/g, ' ')
 }
