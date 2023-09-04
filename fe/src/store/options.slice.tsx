@@ -88,15 +88,12 @@ export const selectOptionsState = (state: RootState) => state.options;
 
 export default optionsSlice.reducer;
 
-export const changeModel = createAsyncThunk<void, Model>('app/changeModel', async (args, thunkApi) => {
-    debugger
-    const model = args
-    if (model) {
-        thunkApi.dispatch(AppActions.setOptionsformdisabled(true))
-        await SdApi.setModel(model)
-        Logger.debug('Changed model to', model.model_name)
-        thunkApi.dispatch(OptionActions.setModel(model.model_name))
-        thunkApi.dispatch(AppActions.setOptionsformdisabled(false))
-    }
+export const changeModel = createAsyncThunk<void, Model>('app/changeModel', async (model, thunkApi) => {
+    if (!model) return
+    thunkApi.dispatch(AppActions.setOptionsformdisabled(true))
+    await SdApi.setModel(model)
+    Logger.debug('Changed model to', model.model_name)
+    thunkApi.dispatch(OptionActions.setModel(model.model_name))
+    thunkApi.dispatch(AppActions.setOptionsformdisabled(false))
 })
 
