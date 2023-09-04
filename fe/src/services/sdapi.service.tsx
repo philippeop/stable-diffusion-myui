@@ -1,9 +1,10 @@
 'use client';
+import axios from 'axios'
+
 import { axiosInstance, tryGet, tryPost } from './common.services'
-import { Embedding, EmbeddingResponse, Lora, Model, Progress, Sampler, Upscaler } from "@common/models/sdapi.models";
+import { Embedding, EmbeddingResponse, Lora, Model, Sampler, Upscaler } from "@common/models/sdapi.models";
 import { SdApiOptions } from "@common/models/option.models";
 import { Logger } from '@/common/logger';
-import axios from 'axios';
 
 /*export default*/
 
@@ -72,6 +73,10 @@ const refreshLoras = async () => {
     return tryPost<void>('/sdapi/v1/refresh-loras')
 }
 
+const interrogate = async (imageUrl: string) => {
+    const imageDataUri = await getImageAsDataUrl(imageUrl)
+    return tryPost('/sdapi/v1/interrogate', { image: imageDataUri, model: 'clip' })
+}
 
 const skip = () => {
     return tryPost<string>('/sdapi/v1/skip')
@@ -84,7 +89,17 @@ export const SdApi = {
     getOptions,
     getLoras, getEmbeddings,
     setModel,
-    skip,
+    interrogate, skip,
     refreshModels,
     refreshLoras,
+}
+
+async function getImageAsDataUrl(url: string) {
+    let blob = await fetch(url).then(r => r.blob());
+    let dataUrl = await new Promise(resolve => {
+      let reader = new FileReader()
+      reader.onload = () => resolve(reader.result)
+      reader.readAsDataURL(blob)
+    })
+    return dataUrl
 }

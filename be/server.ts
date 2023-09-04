@@ -36,11 +36,24 @@ export class Main {
 
     setupRouting() {
         this.app.post('/myapi/txt2img', this.actions.txt2imgAction)
+        this.app.post('/myapi/samplemodels', this.actions.sampleModelsAction)
+        this.app.post('/myapi/upscale', this.actions.upscaleAction)
         this.app.get('/myapi/img/:identifier', this.actions.getImageAction)
         this.app.get('/myapi/img', this.actions.listImagesAction)
         this.app.get('/myapi/tag/:type/:identifier', this.actions.tagImageAction)
+        this.app.post('/myapi/img/move', this.actions.moveImageAction)
         this.app.delete('/myapi/img/:identifier', this.actions.deleteAction)
-        // this.app.get('/myapi/test', (_, res) => { })
+
+        this.app.get('/myapi/settings', this.actions.getSettingsAction)
+        this.app.post('/myapi/settings', this.actions.saveSettingsAction)
+        // this.app.get('/myapi/test/:value', (req, res) => { 
+        //     const value = req.params['value']
+        //     res.status(200).send()
+        //     Logger.log('Received', value)
+        //     setTimeout(() => {
+        //         Logger.log('Timeout value is', value)
+        //     }, 10000)
+        // })
     }
 }
 

@@ -1,55 +1,63 @@
 'use client';
-import { useEffect, useState, useRef, useCallback, FormEvent } from 'react'
+import { useEffect, useState, useRef, useCallback, FormEvent, Fragment } from 'react'
 import classNames from 'classnames'
 
 import { Logger } from '@common/logger'
 import { MyApi } from '../services/myapi.service'
 import { Txt2ImgResult } from '@common/models/myapi.models'
-import Spotlight from './spotlight'
-import { useAppDispatch, useAppSelector } from '../store/store'
-import { deleteImage, setSelectedImage, setModelFilter, setNewestFirst, selectNext, setPromptFilter, refreshImages } from '../store/images.slice'
+import { useAppDispatch, useRootSelector } from '../store/store'
+import { ImageActions, refreshImages } from '../store/images.slice'
 import { SdApi } from '@/services/sdapi.service';
 import { Model } from '@/common/models/sdapi.models';
 import { ClickTwice } from './clicktwice';
-import { setLastSent  } from '@/store/options.slice';
+import { OptionActions } from '@/store/options.slice';
+import { AppActions } from '@/store/app.slice';
+import Tag from './tag';
+
+interface FilterModel {
+    model_name: string
+    count: number
+}
 
 export default function Gallery() {
     Logger.debug('Rendering Gallery')
 
     const dispatch = useAppDispatch()
-    const allimages = useAppSelector((state) => state.images.list)
-    const images = useAppSelector((state) => state.images.filteredList)
-    const selectedImage = useAppSelector((state) => state.images.selectedImage)
-    const modelFilter = useAppSelector((state) => state.images.modelFilter)
-    const newestFirst = useAppSelector((state) => state.images.newestFirst)
-    const promptFilter = useAppSelector((state) => state.images.promptFilter)
-    const compareImage = useAppSelector((state) => state.images.compareWithImage)
-    const last_sent = useAppSelector((state) => state.options.last_sent)
+    const models = useRootSelector(s => s.app.models)
+    const allimages = useRootSelector((state) => state.images.list)
+    const images = useRootSelector((state) => state.images.filteredList)
+    const selectedImage = useRootSelector((state) => state.images.selectedImage)
+    const modelFilter = useRootSelector((state) => state.images.modelNameFilter)
+    const newestFirst = useRootSelector((state) => state.images.newestFirst)
+    const promptFilter = useRootSelector((state) => state.images.promptFilter)
+    const compareImage = useRootSelector((state) => state.images.compareWithImage)
+    const tagsToHide = useRootSelector((state) => state.images.tagsToHide)
+    const last_sent = useRootSelector((state) => state.app.last_sent)
     const [isSlideshow, setIsSlideshow] = useState<boolean>(false)
     const timerHandle = useRef<NodeJS.Timer>()
-    const [models, setModels] = useState<Model[]>([])
+    const [modelsForFilter, setModelsForFilter] = useState<FilterModel[]>([])
 
-    // Get list of models from images
+    // Get list of models from images + known models 
     useEffect(() => {
         (async () => {
-            const allModels = await SdApi.getModels()
-            if (!allModels) return
-            const modelsWithImages = allModels
+            if (!models) return
+            const imageModels = allimages.map(i => i.options.model) // model_name
+            const loadedModels = models.map(m => m.model_name)
+            const allKnownModels = Array.from(new Set(loadedModels.concat(imageModels)))
+            const result = allKnownModels
                 .map(m => {
-                    const count = allimages.filter(i => i.options.model === m.model_name).length
-                    m.title = m.title + ' (' + count + ')'
-                    return m
+                    const count = allimages.filter(i => i.options.model === m).length
+                    return { model_name: m, count }
                 })
-                .sort((a, b) => a.title.localeCompare(b.title))
-
-            setModels(modelsWithImages)
+                .sort((a, b) => a.model_name.localeCompare(b.model_name))
+            setModelsForFilter(result)
         })()
-    }, [allimages])
+    }, [models, allimages])
 
     // Set last_sent to first visible image is there is no last sent (usually the case on a F5)
     useEffect(() => {
-        if(last_sent === undefined && images.length) {
-            dispatch(setLastSent(images[0].options))
+        if (last_sent === undefined && images.length) {
+            dispatch(AppActions.setLastSent(images[0].options))
         }
     }, [images])
 
@@ -59,7 +67,7 @@ export default function Gallery() {
             clearInterval(timerHandle.current)
             timerHandle.current = setInterval(() => {
                 console.log('Slideshow tick')
-                dispatch(selectNext(true))
+                dispatch(ImageActions.selectNext(true))
             }, 4000)
             return () => clearInterval(timerHandle.current);
         }
@@ -80,7 +88,7 @@ export default function Gallery() {
 
     const onImageClicked = useCallback((image: Txt2ImgResult) => {
         Logger.debug('Gallery: Clicked on image', image.name)
-        dispatch(setSelectedImage(image))
+        dispatch(ImageActions.setSelectedImage(image))
     }, [dispatch])
 
     const deleteImageAction = useCallback((image: Txt2ImgResult) => {
@@ -89,12 +97,12 @@ export default function Gallery() {
             return
         }
         MyApi.deleteImage(image)
-        dispatch(deleteImage(image))
+        dispatch(ImageActions.deleteImage(image))
     }, [dispatch])
 
     const slideshow = useCallback(() => {
         Logger.debug('Gallery: Starting slideshow')
-        dispatch(setSelectedImage(images[0]))
+        dispatch(ImageActions.setSelectedImage(images[0]))
         setIsSlideshow(true)
     }, [dispatch, images])
 
@@ -115,12 +123,36 @@ export default function Gallery() {
         })()
     }, [dispatch])
 
+    const moveImage = useCallback((idx: number, nextIdx: number) => {
+        if (idx < 0 || nextIdx < 0 || idx >= images.length || nextIdx >= images.length) return
+        const from = images[idx]
+        const to = images[nextIdx]
+        MyApi.moveImage(from.name, to.name).then(() => dispatch(refreshImages()))
+    }, [images])
+
+    const dragStartHandler = (event: React.DragEvent<HTMLDivElement>, source: string) => {
+        Logger.debug('Dragging', source)
+        event.dataTransfer.setData("source", source);
+    };
+
+    const dropHandler = (event: React.DragEvent<HTMLDivElement>, target: string) => {
+        event.preventDefault();
+        const source = event.dataTransfer.getData("source");
+        Logger.debug('Dropped', source, 'onto', target)
+        MyApi.moveImage(source, target).then(() => dispatch(refreshImages()))
+    };
+
+    const toggleTag = useCallback((tag: number) => {
+        if (tagsToHide.includes(tag)) dispatch(ImageActions.setTagsToHide(tagsToHide.filter(t => t !== tag)))
+        else dispatch(ImageActions.setTagsToHide([tag, ...tagsToHide]))
+    }, [dispatch, tagsToHide])
+
     const galleryItems = (images).map((i, idx) => {
+        const url = '/myapi/img/' + i.name
         const classes = classNames({
             'gallery-item': true,
             'compare': compareImage && (compareImage.name === i.name),
-            'highlight1': i.tag === 1,
-            'highlight2': i.tag === 2
+            'hidden-tag': tagsToHide.includes(i.tag),
         })
 
         const isUpscaled = i.options.upscaler && i.options.upscaler !== 'None'
@@ -131,47 +163,62 @@ export default function Gallery() {
         })
 
         return (
-            <div key={i.name} className={classes}>
-                <ClickTwice style={'tag type t-' + i.tag } onClickTwice={() => tagImage(i)} >
-                    <div title={`Change highlight.\nPress twice.`}></div>
-                </ClickTwice>
-                <div className={upscaledTagClass}>{ isUpscaled ? 'US' : 'NS' }</div>
-                <img loading="lazy" alt={i.name} src={'/myapi/img/' + i.name} onClick={() => onImageClicked(i)} />
-                <ClickTwice style='tag delete' onClickTwice={() => deleteImageAction(i)} >
-                    <div title={`Delete image.\nPress twice.`}></div>
-                </ClickTwice>
+            <div key={i.name} className={classes} draggable={true} onDragStart={(e) => dragStartHandler(e, i.name)} onDragOver={e => e.preventDefault()} onDrop={(e) => dropHandler(e, i.name)}>
+
+                <Tag type={'t-' + i.tag} title={`Change highlight.\nPress twice.`}>
+                    <ClickTwice onClickTwice={() => tagImage(i)} ></ClickTwice>
+                </Tag>
+                <div className={upscaledTagClass}>{isUpscaled ? 'US' : 'NS'}</div>
+                <img loading="lazy" alt={i.name} src={url} onClick={() => onImageClicked(i)} />
+
+                {i.tag == 0 && 
+                <Tag type={'delete'} title={`Delete image.\nPress twice.`}>
+                    <ClickTwice onClickTwice={() => deleteImageAction(i)} ></ClickTwice>
+                </Tag>
+                }
+                <Tag type={'move left'} title={`Move image left.\nPress twice.`}>
+                    <ClickTwice onClickTwice={() => moveImage(idx, idx - 1)} >{"<"}</ClickTwice>
+                </Tag>
+                <Tag type={'move right'} title={`Move image right.\nPress twice.`}>
+                    <ClickTwice onClickTwice={() => moveImage(idx, idx + 1)} >{">"}</ClickTwice>
+                </Tag>
             </div >
         )
     })
 
     return (
-        <div className="gallery-container">
+        <Fragment>
             <div className="gallery-filters">
                 <div>
                     <label htmlFor="model_select">Filter by model:</label>
-                    <select id="model_select" value={modelFilter} onChange={e => dispatch(setModelFilter(e.currentTarget.value))}>
+                    <select id="model_select" value={modelFilter} onChange={e => dispatch(ImageActions.setModelFilter(e.currentTarget.value))}>
                         <option key="All" value="all">All</option>
-                        {models.map(m => <option key={m.filename} value={m.model_name}>{m.title.replace('.safetensors', '')}</option>)}
+                        {modelsForFilter.map((m) => <option key={m.model_name} value={m.model_name}>{m.model_name} ({m.count})</option>)}
                     </select>
                 </div>
                 <div>
                     <label htmlFor="newest_first">Newest first:</label>
-                    <input type="checkbox" id="newest_first" checked={newestFirst} onChange={e => dispatch(setNewestFirst(!!e.currentTarget.checked))}></input>
+                    <input type="checkbox" id="newest_first" checked={newestFirst} onChange={e => dispatch(ImageActions.setNewestFirst(!!e.currentTarget.checked))}></input>
                 </div>
                 <div>
                     <label htmlFor="prompt_filter">Filter by prompt:</label>
-                    <input type="text" id="prompt_filter" value={promptFilter} onChange={e => dispatch(setPromptFilter(e.currentTarget.value))}></input>
+                    <input type="text" id="prompt_filter" value={promptFilter} onChange={e => dispatch(ImageActions.setPromptFilter(e.currentTarget.value))}></input>
                 </div>
-                {/* <div>
-                    <label htmlFor="groupby_batch">Group by batch:</label>
-                    <input type="checkbox" id="groupby_batch" checked={groupByBatch} onChange={groupByBatchChanged}></input>
-                </div> */}
+                <div>
+                    <label htmlFor="tagfilters">Filter by tag:</label>
+                    <div id="tagfilters">
+                        {[0, 1, 2].map(n =>
+                            <Tag type={'t-' + n} dimmed={tagsToHide.includes(n)} onClick={() => toggleTag(n)}></Tag>
+                        )}
+                    </div>
+                </div>
                 <div className="button btn-slideshow" onClick={slideshow} title="Slideshow. Click on image to stop.">▶</div>
             </div>
-            <div className="gallery-items">
-                {...galleryItems}
+            <div className="gallery-container">
+                <div className="gallery-items">
+                    {...galleryItems}
+                </div>
             </div>
-            <Spotlight />
-        </div>
+        </Fragment>
     )
 }

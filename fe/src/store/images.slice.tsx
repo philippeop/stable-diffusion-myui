@@ -6,13 +6,15 @@ import { MyApi } from "@/services/myapi.service";
 import { localstorageLoad, localstorageSave } from './store';
 
 export interface FilterStore {
-    modelFilter: string
+    modelNameFilter: string
     newestFirst: boolean
     promptFilter?: string
+    samplerOptions: string[]
 }
 const default_filter: FilterStore = {
-    modelFilter: 'all',
-    newestFirst: false
+    modelNameFilter: 'all',
+    newestFirst: false,
+    samplerOptions: []
 }
 
 interface ImageDataStore {
@@ -21,6 +23,7 @@ interface ImageDataStore {
     filteredList: Txt2ImgResult[]
     selectedImage?: Txt2ImgResult
     compareWithImage?: Txt2ImgResult
+    tagsToHide: number[]
 }
 
 interface ImageStore extends ImageDataStore, FilterStore { }
@@ -32,14 +35,18 @@ export const default_images: ImageStore = {
     list: [],
     filteredList: [],
     selectedImage: undefined,
+    tagsToHide: []
 }
 export const imagesSlice = createSlice({
     name: 'images',
     initialState: default_images,
     reducers: {
         setImages(state, action) {
-            const images = action.payload;
+            const images = action.payload as Txt2ImgResult[];
             state.list = images
+            if (state.selectedImage) {
+                state.selectedImage = images.find(i => i.name === state.selectedImage!.name)
+            }
             state.filteredList = createFilteredList(state)
         },
         setSelectedImage(state, action) {
@@ -81,7 +88,7 @@ export const imagesSlice = createSlice({
         },
 
         setModelFilter(state, action) {
-            state.modelFilter = action.payload
+            state.modelNameFilter = action.payload
             state.filteredList = createFilteredList(state)
         },
         setNewestFirst(state, action) {
@@ -91,6 +98,13 @@ export const imagesSlice = createSlice({
         setPromptFilter(state, action) {
             state.promptFilter = action.payload
             state.filteredList = createFilteredList(state)
+        },
+        setTagsToHide(state, action) {
+            state.tagsToHide = action.payload
+            state.filteredList = createFilteredList(state)
+        },
+        setSamplerOptions(state, action) {
+            state.samplerOptions = action.payload
         }
     },
     // extraReducers(builder) {
@@ -109,21 +123,10 @@ export const imagesSlice = createSlice({
 
 export const refreshImages = createAsyncThunk('images/refreshImages', async (args, thunkApi) => {
     const images = await MyApi.list()
-    thunkApi.dispatch(setImages(images))
+    thunkApi.dispatch(ImageActions.setImages(images))
 })
 
-export const {
-    setImages,
-    deleteImage,
-    setSelectedImage,
-    setCompareWithImage,
-    swapImages,
-    selectPrevious,
-    selectNext,
-    setModelFilter,
-    setNewestFirst,
-    setPromptFilter,
-} = imagesSlice.actions
+export const ImageActions = imagesSlice.actions
 
 export default imagesSlice.reducer;
 
@@ -141,18 +144,20 @@ function imageCompare(i1: Txt2ImgResult, i2: Txt2ImgResult, invert = false): num
 }
 
 function createFilteredList(state: ImageStore): Txt2ImgResult[] {
-    const hasFilter = !!state.modelFilter && state.modelFilter !== "all"
+    const hasFilter = !!state.modelNameFilter && state.modelNameFilter !== "all"
     const hasPromptFilter = !!state.promptFilter
-    return state.list
+    const filtered = state.list
         .filter(i => hasPromptFilter ? (i.options.prompt.toLowerCase().includes((state.promptFilter ?? '').toLowerCase())) : true)
-        .filter(i => hasFilter ? (i.options.model == state.modelFilter) : true)
-        .sort((i1, i2) => imageCompare(i1, i2, state.newestFirst))
+        .filter(i => hasFilter ? (i.options.model == state.modelNameFilter) : true)
+        //.filter(i => !state.tagsToHide.includes(i.tag))
+    return state.newestFirst ? filtered.reverse() : filtered
 }
 
 export function saveFilters(state: ImageStore): void {
     const obj: FilterStore = {
-        modelFilter: state.modelFilter,
-        newestFirst: state.newestFirst
+        modelNameFilter: state.modelNameFilter,
+        newestFirst: state.newestFirst,
+        samplerOptions: state.samplerOptions,
     }
     localstorageSave('filters', obj)
 }

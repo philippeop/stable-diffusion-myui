@@ -20,7 +20,7 @@ export default function OptionInput(props: OptionInputProps) {
     const { id, type, value, classNameExtra, dimOnEmpty = false, emptyValue = 0, hideEmpty = true, onChange } = props
     const internalOnInput = useCallback((event: ChangeEvent<HTMLInputElement>) => {
         const value = event.currentTarget.value
-        if(!isValid(value, type)) {
+        if (!isValid(value, type)) {
             event.preventDefault()
             event.stopPropagation()
             return
@@ -37,17 +37,24 @@ export default function OptionInput(props: OptionInputProps) {
         'dimmed': dimOnEmpty && empty
     })
     Logger.log(classes)
+    const inputType = type === 'number' ? 'number' : 'text'
     return (
-        <input type="text" id={id} className={classes} value={ (hideEmpty && value === emptyValue) ? '' : value} onInput={internalOnInput}></input>
+        <input type={inputType} id={id} className={classes} value={(hideEmpty && value === emptyValue) ? '' : value} onInput={internalOnInput}></input>
     )
 }
 
 function isValid(value: string | undefined | number, type: InputTypeString) {
-    return (type === 'number'  && !isNaN(Number(value))) ||
-           (type === 'number?' && (!isNaN(Number(value)) || value === ''))
+    if (type === 'number') {
+        return !isNaN(Number(value))
+    }
+    else if (type === 'number?') {
+        return value !== ' ' &&
+            (!isNaN(Number(value)) || value === '')
+    }
+    return true
 }
 
 function getDefault(type: InputTypeString) {
-    if(type === 'number') return 0
+    if (type === 'number') return 0
     return ''
 }

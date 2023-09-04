@@ -8,46 +8,33 @@ import { MessagingService } from './server.messaging.js';
 import { Worker } from './server.worker.js'
 
 import { Logger } from './../fe/src/common/logger.js'
-import { MyUiOptions } from "./../fe/src/common/models/option.models.js"
 import { Txt2ImgResult } from "./../fe/src/common/models/myapi.models.js"
-import { Txt2ImgResponse, Txt2ImgRequest, SdApiError, Progress } from "./../fe/src/common/models/sdapi.models.js"
+import { Txt2ImgPayload, UpscalePayload, SamplePayload } from "./../fe/src/common/models/payload.models.js"
+import { Txt2Img } from './server.txt2img.js';
+import { SavedSettings } from '../fe/src/common/models/option.models.js';
+import { ProgressPooler } from './server.progress.js';
 
-const WEBUI_URL = 'http://127.0.0.1:7861'
+export const WEBUI_URL = 'http://127.0.0.1:7861'
 // const FE_URL = 'http://localhost:7999'
 
 export class Actions {
-    msgg: MessagingService
+    msgs: MessagingService
     db: MyUiDb
     worker: Worker
+    txt2img: Txt2Img
+    progressPooler: ProgressPooler
+
     constructor(wss: WebSocketServer) {
         this.db = new MyUiDb()
-        this.msgg = new MessagingService(wss)
+        this.msgs = new MessagingService(wss)
         this.worker = new Worker()
         this.worker.onOneCompleted = async () => {
-            this.msgg.sendNotice(`Worker completed 1 task, ${this.worker.tasks.length} to go`)
+            this.msgs.sendNotice(`Worker completed 1 task, ${this.worker.tasks.length} to go`)
         }
-        this.worker.onLast = async () => this.msgg.sendTxt2ImgDone()
-
-        setInterval(async () => {
-            if (!this.worker.running) {
-                this.msgg.sendProgress({
-                    running: false,
-                    tasks: this.worker.tasks.length
-                })
-            }
-            else {
-                const progress = await this.getProgress()
-                if (!progress) return // should always be progress (even 0) if webui works
-                this.msgg.sendProgress({
-                    running: true,
-                    tasks: this.worker.tasks.length,
-                    progress: Math.round(progress.progress * 100),
-                    started: progress.state.job_timestamp,
-                    skipped: progress.state.skipped || progress.state.interrupted,
-                    image: progress.current_image
-                })
-            }
-        }, 2000)
+        //this.worker.onLast = async () => this.msgg.sendTxt2ImgDone()
+        this.txt2img = new Txt2Img(this.db, this.msgs)
+        this.progressPooler = new ProgressPooler(this.worker, this.msgs);
+        this.progressPooler.start()
     }
 
     public listImagesAction = (_: Request, res: Response) => {
@@ -58,73 +45,43 @@ export class Actions {
 
     public txt2imgAction = async (req: Request, res: Response) => {
         Logger.debug('txt2imgAction')
-        const options = req.body as MyUiOptions
-        if (!options) Logger.error('Received no options for txt2imgAction')
+        const payload = req.body as Txt2ImgPayload
+        if (!payload || !payload.options) Logger.error('Received no options for txt2imgAction')
         res.status(200).send()
 
-        this.worker.addTask(() => this.handleTxt2ImgAction(options))
-        this.msgg.sendNotice(`Queued prompt, ${this.worker.running ? 'working' : 'idle'}, ${this.worker.tasks.length} in queue`)
+        for (let i = 0; i < (payload.batches ?? 1); i++) {
+            this.worker.addTask('Txt2Img', async () => await this.txt2img.oneTxt2Img(payload.options))
+        }
+        this.msgs.sendNotice(`Queued prompt, ${this.worker.running ? 'working' : 'idle'}, ${this.worker.tasks.length} in queue`)
     }
 
-    private handleTxt2ImgAction = async (options: MyUiOptions) => {
-        this.msgg.sendNotice(`Started, doing ${options.batches} generations`)
-        const batches = options.batches ?? 1
-        options.batches = 1
-        let payload
-        try {
-            payload = this.optionsToRequest(options)
-        }
-        catch (e) {
-            this.msgg.sendTxt2ImgError('Error converting options: ' + (e as Error).message)
-            return
-        }
+    public upscaleAction = async (req: Request, res: Response) => {
+        Logger.debug('upscaleAction')
+        const { options, model, currentmodel } = req.body as UpscalePayload
+        if (!options) Logger.error('Received no options for upscaleAction')
+        res.status(200).send()
 
-        for (let i = 0; i < (batches ?? 1); i++) {
-            Logger.debug(`Doing batch ${i + 1} / ${batches}`)
-            const data = await this.oneTxt2Img(payload)
+        if(currentmodel.hash !== model.hash) this.worker.addTask(`Switching to model ${model.model_name}`, async () => await this.setModel(model.title))
+        this.worker.addTask('Upscaling', async () => await this.txt2img.oneTxt2Img(options))
+        if(currentmodel.hash !== model.hash) this.worker.addTask(`Switching back to current model ${model.model_name}`, async () => await this.setModel(currentmodel.title))
 
-            if (!data || !data.images) {
-                Logger.warn('Txt2Img didnt result in images, probably ran out of memory')
-                this.msgg.sendTxt2ImgError('Txt2Img didnt result in images')
-                break
-            }
-
-            Logger.debug(`Got ${data.images.length} images for batch ${i + 1}, processing`)
-            for (const imageData of data.images) {
-                await this.db.createImage(imageData, options, data.parameters, data.info)
-            }
-            this.msgg.sendTxt2ImgNewImage(i + 1, batches)
-        }
+        this.msgs.sendNotice(`Queued prompt, ${this.worker.running ? 'working' : 'idle'}, ${this.worker.tasks.length} in queue`)
     }
 
-    private oneTxt2Img = async (request: Txt2ImgRequest) => {
-        if (request.n_iter !== 1) Logger.error('oneTxt2Img should be 1 iteration')
-        let data: Txt2ImgResponse | undefined;
-        try {
-            const response = await fetch(`${WEBUI_URL}/sdapi/v1/txt2img`, {
-                method: 'post',
-                headers: { 'content-type': 'application/json' },
-                body: JSON.stringify(request)
-            })
+    public sampleModelsAction = async (req: Request, res: Response) => {
+        Logger.debug('sampleModelsAction')
+        const { options, models, currentmodel } = req.body as SamplePayload
+        if (!options) Logger.error('Received no options for sampleModelsAction')
+        if (!models || !models.length) Logger.error('Received no models for sampleModelsAction')
+        res.status(200).send()
 
-            if (response.ok) {
-                data = await response.json() as Txt2ImgResponse
-            }
-            else {
-                const error = await response.json() as SdApiError
-                const isOom = error.error === 'OutOfMemoryError'
-                const errorMsg = isOom ? error.errors.split('If reserved memory is')[0] : error.errors
-                const txt = `WebUI error: ${error.error} -- ${errorMsg}`
-                this.msgg.sendTxt2ImgError(txt)
-                Logger.warn(txt)
-            }
+        for (const model of models) {
+            this.worker.addTask(`Switching to model ${model.model_name}`, async () => await this.setModel(model.title))
+            this.worker.addTask(`Sampling model ${model.model_name}`,async () => await this.txt2img.oneTxt2Img({ ...options, model: model.model_name }))
         }
-        catch (e) {
-            console.log('???')
-            Logger.warn('Unable to connect to the A1111 API', e)
-        }
+        this.worker.addTask(`Switching back to current model ${currentmodel.model_name}`, async () => await this.setModel(currentmodel.title))
 
-        return data
+        this.msgs.sendNotice(`Queued model sampler tasks, ${this.worker.running ? 'working' : 'idle'}, ${this.worker.tasks.length} in queue`)
     }
 
     public getImageAction = (req: Request, res: Response) => {
@@ -146,14 +103,22 @@ export class Actions {
         const type = req.params['type']
         const name = req.params['identifier']
         Logger.debug('tagImageAction', name, type)
-        
-        if(!this.db.isValidType(type)) {
-            this.msgg.sendNotice('Bad type received, ' + type)
+
+        if (!this.db.isValidType(type)) {
+            this.msgs.sendNotice('Bad type received, ' + type)
             return res.status(400).send(false)
         }
         const typeNumber = +type
         await this.db.tagImage(name, typeNumber)
-        this.msgg.sendNotice(`Tagged ${name} with type ${type}`)
+        this.msgs.sendNotice(`Tagged ${name} with type ${type}`)
+        res.status(200).send(true)
+    }
+
+    public moveImageAction = async (req: Request, res: Response) => {
+        const { from, to } = req.body as { from: string, to: string }
+        Logger.debug('moveImageAction', from, to)
+        await this.db.moveImage(from, to)
+        this.msgs.sendNotice(`Moved ${from} after ${to}`)
         res.status(200).send(true)
     }
 
@@ -161,17 +126,17 @@ export class Actions {
         const name = req.params['identifier']
         Logger.debug('getImageAction', name)
         const path = `./imgs/${name}`
-        
+
         try {
             const success = await this.db.deleteImage(name)
-            if(!success) {
-                this.msgg.sendNotice(`Can't delete image ${name}`)
+            if (!success) {
+                this.msgs.sendNotice(`Can't delete image ${name}`)
                 res.status(400).send(false)
-                return 
+                return
             }
             Logger.log('Deleting file at', path)
             if (fs.existsSync(path)) fs.rmSync(path)
-            this.msgg.sendImageDelete(name)
+            this.msgs.sendImageDelete(name)
             res.status(200).send()
         }
         catch (err) {
@@ -180,53 +145,29 @@ export class Actions {
         }
     }
 
-    private getProgress = async () => {
-        const response = await fetch(`${WEBUI_URL}/sdapi/v1/progress`)
-        if (!response.ok) return
-        return await response.json() as Progress
+    public getSettingsAction = async (req: Request, res: Response) => {
+        Logger.debug('getSettingsAction')
+        const settings = this.db.getSettings()
+        res.status(200).send(settings)
     }
 
-    private optionsToRequest = (options: MyUiOptions): Txt2ImgRequest => {
-        const error = checkOptions(options)
-        if (error) throw new Error(error)
-        const request = {} as Txt2ImgRequest;
-        request.prompt = sanitizePrompt(options.prompt)
-        request.negative_prompt = sanitizePrompt(options.negative)
-        // Logger.debug('Prompt before:', JSON.stringify(options.prompt))
-        // Logger.debug('Negative before:', JSON.stringify(options.negative))
-        // Logger.log('Prompt after:', JSON.stringify(request.prompt))
-        // Logger.log('Negative before:', JSON.stringify(options.negative))
-        if (options.sampler) request.sampler_name = options.sampler;
-        if (options.sampler) request.sampler_index = options.sampler;
-        request.steps = options.steps;
-        request.save_images = false;
-        request.send_images = true;
-        request.height = options.image_height
-        request.width = options.image_width
-        request.cfg_scale = options.cfg_scale;
-        request.seed = options.seed || -1
-        request.subseed = -1
-        request.subseed_strength = 0
-        request.restore_faces = !!options.restore_faces
-        request.tiling = false
-        request.styles = []
-        request.batch_size = 1
-        request.n_iter = options.batches || 1
-        request.enable_hr = !!options.upscaler && options.upscaler !== 'None'
-        request.override_settings = {
-            'CLIP_stop_at_last_layers': options.clip_skip,
-            'eta_noise_seed_delta': options.ensd || undefined
-        }
-        if (options.upscaler) {
-            request.hr_upscaler = options.upscaler
-            request.hr_scale = options.upscaler_scale
-            request.hr_resize_x = request.width * options.upscaler_scale
-            request.hr_resize_y = request.height * options.upscaler_scale
-            request.hr_second_pass_steps = options.upscaler_steps
-            request.denoising_strength = options.upscaler_denoise
-        }
+    public saveSettingsAction = async (req: Request, res: Response) => {
+        Logger.debug('saveSettingsAction')
+        const payload = req.body as SavedSettings
+        await this.db.saveSettings(payload.txt2img_options)
+        res.status(200).send()
+    }
 
-        return request
+    private setModel = async (model_title: string) => {
+        const response = await fetch(`${WEBUI_URL}/sdapi/v1/options`, {
+            method: 'POST',
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ sd_model_checkpoint: model_title })
+        })
+        if (!response.ok) { Logger.error('Failed switching to model', model_title) }
+        return response.ok
     }
 
     private imageMetadataToImageResult = (meta: ImageMetadata): Txt2ImgResult => {
@@ -238,25 +179,4 @@ export class Actions {
             tag: meta.tag
         }
     }
-}
-
-function checkOptions(options: MyUiOptions) {
-    if (!options.prompt.length) return 'prompt' 
-    const patt = /\)\s+\(/g;
-    if (patt.test(options.prompt)) return 'prompt whitespace'
-    if (!options.steps) return 'steps'
-    if (typeof options.seed !== 'number') return 'seed'
-    if (typeof options.restore_faces !== 'boolean') return 'restore_faces'
-    if (typeof options.cfg_scale !== 'number' ||options.cfg_scale < 1 || options.cfg_scale > 10) return 'cfg_scale'
-    if (typeof options.image_height !== 'number' || options.image_height < 100) return 'image_height'
-    if (typeof options.image_width !== 'number' || options.image_width < 100) return 'image_width'
-    if (typeof options.upscaler_scale !== 'number' || options.upscaler_scale < 1) return 'upscaler_scale'
-    if (typeof options.upscaler_steps !== 'number' || options.upscaler_steps < 1) return 'upscaler_steps'
-    if (typeof options.upscaler_denoise !== 'number' || options.upscaler_denoise < 0 || options.upscaler_denoise > 1) return 'upscaler_denoise'
-}
-
-function sanitizePrompt(prompt: string) {
-    return prompt
-        .replace(/\n+/g, ' ')
-        .replace(/\s+/g, ' ')
 }

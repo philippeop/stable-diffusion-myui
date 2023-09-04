@@ -15,9 +15,7 @@ export default function Button(props: ButtonProps) {
     })
     return (
         <div className={classes} id={id} onClick={() => onClick && onClick()}>
-            <div className="button-inner">
-                {children}
-            </div>
+            {children}
         </div>
     )
 }

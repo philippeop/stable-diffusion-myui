@@ -1,98 +1,67 @@
 'use client';
-import { createSlice } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
-import { AppState, localstorageLoad, localstorageSave } from "./store";
-import { BaseMyUiOptions, ModelMyUiOptions, MyUiOptions, default_options } from '@common/models/option.models'
-
-// alias, i keep changing the names
-type baseoptions = BaseMyUiOptions
-type modeloptions = ModelMyUiOptions
-type options = MyUiOptions
+import { RootState, localstorageLoad, localstorageSave } from "./store";
+import { SavedSettings, Txt2ImgOptions, default_options } from '@common/models/option.models'
+import { AppActions } from './app.slice';
+import { SdApi } from '@/services/sdapi.service';
+import { Logger } from '@/common/logger';
+import { Model } from '@/common/models/sdapi.models';
 
 const root_key = 'options';
 const base_key = `${root_key}_base`
 function makeKey(model: string) { return root_key + '_' + model }
 
-// copy(JSON.stringify(localStorage));
-/*
- const importObj: { [key: string]: string} = 
-for(var key of Object.keys(importObj)) {
-    const value = importObj[key]
-    localStorage.setItem(key, value)
-}
-*/
-
-export const loadBaseOptions = (): baseoptions => {
-    console.log('Loading base options')
-    return localstorageLoad<baseoptions>(base_key, default_options)
-};
-
-export const loadModelOptions = (model: string): modeloptions => {
+export const loadOptions = (model: string = 'all'): Txt2ImgOptions => {
     const key = makeKey(model)
-    return localstorageLoad<modeloptions>(key, default_options)
-};
+    return localstorageLoad<Txt2ImgOptions>(key, default_options)
+}
 
-export const saveBaseOptions = (options: baseoptions) => {
-    const baseOptions: baseoptions = {
-        ...default_options,
-        model: options.model,
-        image_height: options.image_height,
-        image_width: options.image_width,
-        batches: options.batches,
-        seed: options.seed,
-        ensd: options.ensd,
-        restore_faces: options.restore_faces,
-    }
-    localstorageSave(base_key, baseOptions)
-};
-
-export const saveModelOptions = (model: string | undefined, options: modeloptions) => {
+export const saveOptions = (model: string | undefined, options: Txt2ImgOptions) => {
     if (!model) { console.log('Not saving because there is no model selected'); return }
     const key = makeKey(model)
-    const modelOptions: modeloptions = {
-        prompt: options.prompt,
-        negative: options.negative,
-        cfg_scale: options.cfg_scale,
-        upscaler: options.upscaler,
-        upscaler_scale: options.upscaler_scale,
-        upscaler_steps: options.upscaler_steps,
-        upscaler_denoise: options.upscaler_denoise,
-        sampler: options.sampler,
-        steps: options.steps,
-        clip_skip: options.clip_skip
-    }
-    localstorageSave(key, modelOptions)
-};
-
-export interface OptionStore extends MyUiOptions {
-    [key: string]: any;
-    last_sent?: options
+    localstorageSave(key, options)
 }
 
 // Actual Slice
 export const optionsSlice = createSlice({
     name: root_key,
-    initialState: default_options as OptionStore,
+    initialState: default_options as Txt2ImgOptions,
     reducers: {
-        setLastSent(state, action) { state.last_sent = action.payload },
+        setSettings(state, action) {
+            const settings = action.payload as SavedSettings
+            const options = settings.txt2img_options
+            
+            state.model = options.model
+            state.image_height = options.image_height
+            state.image_width = options.image_width
+            
+            state.prompt = options.prompt
+            state.negative = options.negative
+            state.cfg_scale = options.cfg_scale
+            
+            state.sampler = options.sampler
+            state.steps = options.steps
+
+            state.clip_skip = options.clip_skip
+            state.seed = options.seed
+            state.ensd = options.ensd
+            
+            state.restore_faces = options.restore_faces
+
+            state.upscale = options.upscale
+            state.upscaler = options.upscaler
+            state.upscaler_scale = options.upscaler_scale
+            state.upscaler_steps = options.upscaler_steps
+            state.upscaler_denoise = options.upscaler_denoise
+        },
         setModel(state, action) {
-            const loadedState = loadModelOptions(action.payload);
             state.model = action.payload
-            state.prompt = loadedState.prompt
-            state.negative = loadedState.negative
-            state.cfg_scale = loadedState.cfg_scale
-            state.upscaler = loadedState.upscaler
-            state.upscaler_scale = loadedState.upscaler_scale
-            state.upscaler_steps = loadedState.upscaler_steps
-            state.upscaler_denoise = loadedState.upscaler_denoise
-            state.sampler = loadedState.sampler
-            state.steps = loadedState.steps
-            state.clip_skip = loadedState.clip_skip
-            return state
         },
         setPrompt(state, action) { state.prompt = action.payload },
         setNegative(state, action) { state.negative = action.payload },
         setCfgScale(state, action) { state.cfg_scale = action.payload },
+        setUpscale(state, action) { state.upscale = !!action.payload },
         setUpscaler(state, action) { state.upscaler = action.payload },
         setUpscalerScale(state, action) { state.upscaler_scale = action.payload },
         setUpscalerSteps(state, action) { state.upscaler_steps = action.payload },
@@ -101,7 +70,6 @@ export const optionsSlice = createSlice({
         setSteps(state, action) { state.steps = action.payload },
         setImageWidth(state, action) { state.image_width = action.payload },
         setImageHeight(state, action) { state.image_height = action.payload },
-        setBatches(state, action) { state.batches = action.payload },
         setClipSkip(state, action) { state.clip_skip = action.payload },
         setSeed(state, action) {
             console.log('action.payload', action.payload)
@@ -110,28 +78,25 @@ export const optionsSlice = createSlice({
             state.seed = valid ? seed : -1
         },
         setEnsd(state, action) { state.ensd = +action.payload },
-        setRestoreFaces(state, action) { state.restore_faces = !!action.payload }
+        setRestoreFaces(state, action) { state.restore_faces = !!action.payload },
     }
 });
 
-export const {
-    setLastSent,
-    setModel,
-    setPrompt, setNegative,
-    setCfgScale,
-    setUpscaler,
-    setUpscalerScale,
-    setUpscalerSteps,
-    setUpscalerDenoise,
-    setSampler,
-    setSteps,
-    setImageWidth, setImageHeight,
-    setBatches,
-    setClipSkip,
-    setSeed, setEnsd,
-    setRestoreFaces,
-} = optionsSlice.actions
+export const OptionActions = optionsSlice.actions
 
-export const selectOptionsState = (state: AppState) => state.options;
+export const selectOptionsState = (state: RootState) => state.options;
 
 export default optionsSlice.reducer;
+
+export const changeModel = createAsyncThunk<void, Model>('app/changeModel', async (args, thunkApi) => {
+    debugger
+    const model = args
+    if (model) {
+        thunkApi.dispatch(AppActions.setOptionsformdisabled(true))
+        await SdApi.setModel(model)
+        Logger.debug('Changed model to', model.model_name)
+        thunkApi.dispatch(OptionActions.setModel(model.model_name))
+        thunkApi.dispatch(AppActions.setOptionsformdisabled(false))
+    }
+})
+

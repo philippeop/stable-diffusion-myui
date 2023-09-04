@@ -1,5 +1,7 @@
 'use client';
 import React, { useCallback, useEffect, useState, useTransition } from 'react';
+import classNames from 'classnames';
+
 import { Logger } from '@common/logger';
 import Options from './options'
 import Gallery from './gallery';
@@ -8,13 +10,19 @@ import Actions from './actions';
 import { SdApi } from '@/services/sdapi.service';
 import { Embedding, Lora } from '@/common/models/sdapi.models';
 
+import { getSettings, useAppDispatch } from '@/store/store';
+
 import config from '../../config.json'
-import classNames from 'classnames';
+import { AppActions } from '@/store/app.slice';
+import { OptionActions } from '@/store/options.slice';
+import Spotlight from './spotlight';
+import ModelSampler from './modelsampler';
 
 export default function App() {
     Logger.debug('Rendering App')
+    const dispatch = useAppDispatch()
 
-    const [ showLoras, setShowLoras ] = useState<boolean>()
+    const [showLoras, setShowLoras] = useState<boolean>()
     const [loras, setLoras] = useState<Lora[]>([])
     const [embeddings, setEmbeddings] = useState<Embedding[]>([])
 
@@ -49,8 +57,26 @@ export default function App() {
     })
 
     const loraClass = classNames({
-        'hidden': !showLoras
+        'hidden': !showLoras,
+        'row': true
     })
+
+    // init
+    useEffect(() => {
+        (async () => {
+            const models = await SdApi.getModels()
+            const samplers = await SdApi.getSamplers()
+            const upscalers = await SdApi.getUpscalers()
+            const sdoptions = await SdApi.getOptions()
+
+            if (models) dispatch(AppActions.setModels(models.filter(m => !!m)))
+            if (samplers) dispatch(AppActions.setSamplers(samplers))
+            if (upscalers) dispatch(AppActions.setUpscalers(upscalers))
+            if (sdoptions) dispatch(AppActions.setSdOptions(sdoptions))
+
+            dispatch(getSettings())
+        })()
+    }, [dispatch])
 
     return (
         <div className="app">
@@ -59,25 +85,32 @@ export default function App() {
                 <Options />
                 <Actions />
             </div>
-            <div className='row'>
-                <div>
-                    <div onClick={() => toggleLoras()}>Loras:</div>
-                    <div className={loraClass}>
-                        <ul>
-                            {loraElements}
-                        </ul>
-                    </div>
+            <div className=''>
+                <div onClick={() => toggleLoras()}>
+                    Loras & Embeddings
                 </div>
-                <div>
-                    <div onClick={() => toggleLoras()}>Embeddings:</div>
+                <div className='row'>
                     <div className={loraClass}>
-                        <ul>
-                            {embedElements}
-                        </ul>
+                        <div>Loras:</div>
+                        <div>
+                            <ul>
+                                {loraElements}
+                            </ul>
+                        </div>
+                    </div>
+                    <div className={loraClass}>
+                        <div>Embeddings:</div>
+                        <div>
+                            <ul>
+                                {embedElements}
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
             <Gallery />
+            <Spotlight />
+            <ModelSampler />
         </div>
     )
 }

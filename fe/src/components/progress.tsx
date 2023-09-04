@@ -4,12 +4,12 @@ import useWebSocket, { ReadyState } from "react-use-websocket";
 
 import { useAppDispatch } from "../store/store"
 import { Logger } from '@common/logger';
-import { addMessage } from "@/store/worker.slice";
+import { AppActions } from "@/store/app.slice";
 import { refreshImages } from "@/store/images.slice";
 import { BackendStatus } from '@/common/models/myapi.models';
 import moment from 'moment';
 
-interface MessageFormat {
+export interface MessageFormat {
     type: string
     data: string | object
 }
@@ -19,6 +19,7 @@ export default function GeneratorProgress() {
     Logger.debug('Rendering GeneratorProgress')
     const dispatch = useAppDispatch()
     const [progress, setProgress] = useState<BackendStatus>()
+    const [preview, setPreview] = useState<string>()
 
     const { lastMessage, readyState } = useWebSocket('ws://localhost:7999/ws', { shouldReconnect: () => true });
 
@@ -29,57 +30,81 @@ export default function GeneratorProgress() {
         if (!data) return
         Logger.debug('Message received', data)
         if (data.type === 'error') {
-            dispatch(addMessage(data.data))
+            dispatch(AppActions.addMessage(data.data))
         }
         if (data.type === 'txt2img') {
             dispatch(refreshImages())
         }
         else if (data.type === 'info') {
-            dispatch(addMessage(data.data))
+            dispatch(AppActions.addMessage(data.data))
         }
         else if (data.type === 'test') {
-            dispatch(addMessage('[TEST]: ' + data.data))
+            dispatch(AppActions.addMessage('[TEST]: ' + data.data))
         }
         else if (data.type === 'progress' && typeof data.data === 'object') {
             const newProgress = data.data as BackendStatus
             setProgress(newProgress)
+            if (!newProgress.image) setPreview(undefined)
+            else if (newProgress.image !== 'same') setPreview('data:image/png;base64,' + newProgress.image)
         }
     }, [dispatch, lastMessage])
 
     const wsStatus = getStatus(readyState)
-    useEffect(() => {
-        Logger.debug('Websocket status changed to', wsStatus)
-    }, [wsStatus])
+    // useEffect(() => {
+    //     Logger.debug('Websocket status changed to', wsStatus)
+    // }, [wsStatus])
 
     let inner;
     if (!progress) inner = <></>
-    else if (!progress.running) inner = <div>Idle, {progress.tasks} tasks</div>
+    else if (!progress.running) inner = <span>Idle, {progress.tasks.length} tasks</span>
     else {
-        const timeStared = moment(progress.started, 'YYYYMMDDHHmmss')
-        const timeTaken = moment().diff(timeStared, 'seconds')
-        const image = progress.image ? <img alt="Image being generated" src={'data:image/png;base64,' + progress.image} /> : <></>
+        const timeStared = progress.started !== '0' ? moment(progress.started, 'YYYYMMDDHHmmss') : undefined
+        const timeTaken = timeStared ? moment().diff(timeStared, 'seconds') : 0
+        const progressSection = progress.skipped ? <div>Skipping...</div> : <div>Progress: {progress.progress} %</div>
         inner = (
             <Fragment>
-                <div>Working, {progress.tasks} tasks, started {timeStared?.format('H:mm:ss')}</div>
+                <span>Working, {progress.tasks.length} tasks</span>
                 <div>{timeTaken} seconds elapsed</div>
-                {progress.skipped ? <div>Skipping...</div> : <div>Progress: {progress.progress} %</div>}
-                <div className="image-container">{image}</div>
+                {progressSection}
+                {reduceTaskTitles(progress.tasks).map(t => <div className="nowrap-ellipsis">☼{t}</div>)}
             </Fragment>
         )
     }
 
-    return <div className="progress-container">
-        <span>{wsStatus}</span>
-        {inner}
+    return <div className="progress-container" style={{ backgroundImage: `url(${preview})` }}>
+        <div className="progress-info">
+            {wsStatus} {inner}
+        </div>
     </div>
 }
 
 const getStatus = function (readyState: ReadyState) {
     return {
-        [ReadyState.CONNECTING]: 'Connecting',
-        [ReadyState.OPEN]: 'Connected',
-        [ReadyState.CLOSING]: 'Closing',
-        [ReadyState.CLOSED]: 'Closed',
-        [ReadyState.UNINSTANTIATED]: 'Uninstantiated',
+        [ReadyState.CONNECTING]: (<span title="Socket: Connecting">☑</span>),
+        [ReadyState.OPEN]: (<span title="Socket: Connected">☑</span>),
+        [ReadyState.CLOSING]: (<span title="Socket: Closing">☒</span>),
+        [ReadyState.CLOSED]: (<span title="Socket: Closed">☒</span>),
+        [ReadyState.UNINSTANTIATED]: (<span title="Socket: Uninstantiaed">☒</span>),
     }[readyState];
+}
+
+const reduceTaskTitles = function (titles: string[]) {
+    const list = []
+    let previousValue = ''
+    let previousCount = 1
+    for (const title of titles) {
+        if (title === previousValue) {
+            previousCount++
+            continue
+        }
+        else if (previousValue !== '') {
+            if (previousCount > 1) list.push(previousValue + ' x' + previousCount)
+            else list.push(previousValue)
+            previousCount = 1
+        }
+        previousValue = title
+    }
+    if (previousCount > 1) list.push(previousValue + ' x' + previousCount)
+    else list.push(previousValue)
+    return list
 }

@@ -3,7 +3,7 @@ import { PropsWithChildren, useCallback, useRef, useState } from 'react'
 
 interface ClickTwiceProps extends PropsWithChildren {
     id?: string
-    style: string
+    style?: string
     onClickTwice: () => void
 }
 export function ClickTwice(props: ClickTwiceProps) {
@@ -23,7 +23,8 @@ export function ClickTwice(props: ClickTwiceProps) {
     }, [clickedOnce])
 
     const className = classNames({
-        [style]: true,
+        [style ?? '']: true,
+        'clicktwice': true,
         'hot': clickedOnce
     })
 
@@ -37,9 +38,7 @@ export function ClickTwiceButton(props: ClickTwiceProps) {
 
     return (
         <ClickTwice id={id} style={'button ' + style} onClickTwice={onClickTwice}>
-            <div className="button-inner">
-                {children}
-            </div>
+            {children}
         </ClickTwice>
     )
 }

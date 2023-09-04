@@ -2,8 +2,9 @@ import fs from 'fs'
 import { Low } from "lowdb"
 import { JSONFile } from "lowdb/node"
 import { Logger } from "./../fe/src/common/logger.js"
-import { MyUiOptions } from "./../fe/src/common/models/option.models.js"
+import { SavedSettings, Txt2ImgOptions, default_options } from "./../fe/src/common/models/option.models.js"
 import { Txt2ImgInfo, Txt2ImgParameters } from "./../fe/src/common/models/Txt2ImgResponse.js"
+import { arrayMoveMutable } from 'array-move'
 
 // db
 interface Data {
@@ -13,7 +14,7 @@ export interface ImageMetadata {
     name: string
     timestamp: string // YYYYMMDDhhmmss
     seed: number
-    options: MyUiOptions
+    options: Txt2ImgOptions
     original_parameters: Txt2ImgParameters
     original_info: Txt2ImgInfo
     tag: number
@@ -21,10 +22,14 @@ export interface ImageMetadata {
 
 export class MyUiDb {
     private db: Low<Data>;
+    private settings: Low<SavedSettings>;
     constructor() {
-        const defaultData: Data = { images: [] }
-        const adapter = new JSONFile<Data>('db.json')
-        this.db = new Low<Data>(adapter, defaultData)
+        const dataAdapter = new JSONFile<Data>('db.json')
+        const settingsAdapter = new JSONFile<SavedSettings>('db.settings.json')
+        this.db = new Low<Data>(dataAdapter, { images: [] })
+        this.settings = new Low<SavedSettings>(settingsAdapter, {
+            txt2img_options: default_options
+        })
         this.loadAndUpgrade()
     }
 
@@ -40,15 +45,16 @@ export class MyUiDb {
 
     async load() {
         await this.db.read()
+        await this.settings.read()
     }
 
     async loadAndUpgrade() {
         await this.load()
+        // let counter = 0
         // for(const i of this.db.data.images) {
-        //     delete i.options["last_sent"]
-        //     delete i.options["image_count"]
+        //     counter++
         // }
-        // Logger.log('Upgraded', this.db.data.images.length, 'images')
+        // Logger.log('Upgraded', counter, 'images')
         // await this.save()
     }
 
@@ -56,7 +62,7 @@ export class MyUiDb {
         return this.db.data.images
     }
 
-    async createImage(imageData: string, options: MyUiOptions, params: Txt2ImgParameters, info: string) {
+    async createImage(imageData: string, options: Txt2ImgOptions, params: Txt2ImgParameters, info: string) {
         const name = this.saveImage(imageData)
         const original_info = this.convertAndFilterInfo(info)
         this.db.data.images.push({
@@ -83,17 +89,29 @@ export class MyUiDb {
 
     async tagImage(name: string, type: number) {
         const image = this.db.data.images.find(i => i.name === name)
-        if(!image) { Logger.error('Image', name ,'not found'); return }
-        if(!this.isValidType(type)) Logger.error('Type', type, 'unexpected')
+        if (!image) { Logger.error('Image', name, 'not found'); return }
+        if (!this.isValidType(type)) Logger.error('Type', type, 'unexpected')
         image.tag = type
         await this.save('tagImage')
+    }
+
+    async moveImage(from: string, to: string) {
+        const fromIndex = this.db.data.images.findIndex(i => i.name === from)
+        const toIndex = this.db.data.images.findIndex(i => i.name === to)
+        // moves 'from' image after 'to' images
+        // moveImage(b,c) [a,b,c,d] => [a,c,b,d]
+        arrayMoveMutable(this.db.data.images, fromIndex, toIndex)
+        await this.save()
+        const fromIndex2 = this.db.data.images.findIndex(i => i.name === from)
+        const toIndex2 = this.db.data.images.findIndex(i => i.name === to)
+        Logger.log(fromIndex, toIndex, 'became', fromIndex2, toIndex2)
     }
 
     async deleteImage(name: string) {
         Logger.log('Deleting entry name', name)
         const index = this.db.data.images.findIndex((i) => i.name === name)
         const image = this.db.data.images[index]
-        if(image.tag > 0) {
+        if (image.tag > 0) {
             Logger.debug('Tried to delete tagged image', name)
             return false
         }
@@ -102,9 +120,18 @@ export class MyUiDb {
         return true
     }
 
+    public getSettings() {
+        return this.settings.data
+    }
+
+    public async saveSettings(options: Txt2ImgOptions) {
+        this.settings.data.txt2img_options = options
+        await this.settings.write()
+    }
+
     public isValidType(type: string | number) {
-        if(typeof type === 'string') return [ '0', '1', '2' ].includes(type)
-        return [ 0, 1, 2 ].includes(type)
+        if (typeof type === 'string') return ['0', '1', '2'].includes(type)
+        return [0, 1, 2].includes(type)
     }
 
     private convertAndFilterInfo(info: string): Txt2ImgInfo {

@@ -5,21 +5,26 @@ import moment from 'moment';
 import { Txt2ImgResult } from '@common/models/myapi.models'
 import { Logger } from '@common/logger';
 import { MyApi } from '@/services/myapi.service';
-import { useAppDispatch, useAppSelector } from '../store/store'
-import { deleteImage, selectNext, selectPrevious, setCompareWithImage, setSelectedImage, swapImages } from '../store/images.slice'
-import { OptionStore, setSeed } from '../store/options.slice'
+import { useAppDispatch, useRootSelector } from '../store/store'
+import { ImageActions, refreshImages } from '../store/images.slice'
+import { OptionStore, OptionActions } from '../store/options.slice'
 import Pill from './pill'
 import Button from './button';
 import { ClickTwiceButton } from './clicktwice';
+import { SdApi } from '@/services/sdapi.service';
+import { DictionaryInterface, Txt2ImgOptions } from '@/common/models/option.models';
+import Tag from './tag';
 
 export default function Spotlight() {
     Logger.debug('Rendering Spotlight')
     const dispatch = useAppDispatch()
-    const currentOptions = useAppSelector(s => s.options)
-    const image = useAppSelector(s => s.images.selectedImage)
-    const otherImage = useAppSelector(s => s.images.compareWithImage)
-    const prompt = useAppSelector(s => s.options.prompt)
-    const negative = useAppSelector(s => s.options.negative)
+    const models = useRootSelector(s => s.app.models)
+    const currentOptions = useRootSelector(s => s.options)
+    const image = useRootSelector(s => s.images.selectedImage)
+    const otherImage = useRootSelector(s => s.images.compareWithImage)
+    const prompt = useRootSelector(s => s.options.prompt)
+    const negative = useRootSelector(s => s.options.negative)
+    const url = image ? '/myapi/img/' + image.name : undefined
 
     useEffect(() => {
         Logger.debug('Spotlight selectedImage changed to', image?.name)
@@ -36,13 +41,13 @@ export default function Spotlight() {
             Logger.log('Spotlight: onKeyUp captured for image', image)
             event.stopPropagation()
             event.preventDefault()
-            dispatch(selectNext(true))
+            dispatch(ImageActions.selectNext(true))
         }
         if (event.key === 'ArrowLeft') {
             Logger.log('Spotlight: onKeyUp captured for image', image)
             event.stopPropagation()
             event.preventDefault()
-            dispatch(selectPrevious(true))
+            dispatch(ImageActions.selectPrevious(true))
         }
     }, [dispatch, image])
 
@@ -67,9 +72,24 @@ export default function Spotlight() {
 
     const loadSeed = useCallback((seed: number) => {
         if (confirm('This will override you current seed. Are you sure?')) {
-            dispatch(setSeed(seed))
+            dispatch(OptionActions.setSeed(seed))
         }
     }, [dispatch])
+
+    const setTag = useCallback((tag: number) => {
+        (async () => {
+            if (!image) return
+            const result = await MyApi.tagImage(image, tag)
+            if (result === true) {
+                dispatch(refreshImages())
+            }
+        })()
+    }, [image, dispatch])
+
+    const onInterrogateClick = useCallback(() => {
+        if (!image || !url) return
+        SdApi.interrogate(url);
+    }, [image])
 
     const onDeleteBtnClick = useCallback(() => {
         if (!image) return
@@ -78,9 +98,38 @@ export default function Spotlight() {
             return
         }
         MyApi.deleteImage(image)
-        dispatch(selectPrevious(false))
-        dispatch(deleteImage(image))
+        dispatch(ImageActions.selectPrevious(false))
+        dispatch(ImageActions.deleteImage(image))
     }, [dispatch, image])
+
+    const onUpscaleClick = () => {
+        if (!image) return
+        if (!currentOptions.upscaler || currentOptions.upscaler === 'None') {
+            alert('Configure an upscaler first')
+            return
+        }
+        const currentmodel = models.find(m => m.model_name === currentOptions.model)
+        const model = models.find(m => m.model_name === image.options.model)
+        if (!currentmodel) {
+            Logger.error(`Couldn't find current model`, currentOptions.model)
+            return
+        }
+        if (!model) {
+            Logger.error(`Couldn't find image model`, image.options.model)
+            return
+        }
+        const options = {
+            ...image.options,
+            model: model.model_name,
+            seed: image.seed,
+            upscale: true,
+            upscaler: currentOptions.upscaler,
+            upscaler_scale: currentOptions.upscaler_scale,
+            upscaler_steps: currentOptions.upscaler_steps,
+            upscaler_denoise: currentOptions.upscaler_denoise
+        } as Txt2ImgOptions
+        MyApi.upscale(options, model, currentmodel).then()
+    }
 
     if (!image) return (<></>)
 
@@ -104,8 +153,8 @@ export default function Spotlight() {
 
     const fields = []
     for (const f of optionsMapper.filter(om => !om.skip)) {
-        const value = f.getter ? f.getter(image) : image.options[f.key]
-        const same = f.sameFn ? f.sameFn(image, currentOptions) : currentOptions[f.key] === value
+        const value = f.getter ? f.getter(image) : (image.options as unknown as DictionaryInterface)[f.key]
+        const same = f.sameFn ? f.sameFn(image, currentOptions) : (currentOptions as unknown as DictionaryInterface)[f.key] === value
         const className = f.compare ? (same ? 'same' : 'diff') : ''
         fields.push(
             <div key={f.key} onClick={() => f.onClick && f.onClick(image)} className='info-line'>
@@ -124,9 +173,6 @@ export default function Spotlight() {
     const promptPills = parsePrompt(image.options.prompt).map(pd => tokenDefToPill(pd, false)) // image.options.prompt
     const negativePills = parsePrompt(image.options.negative).map(pd => tokenDefToPill(pd, true)) // image.options.negative
 
-    const sameSeed = image.seed.toString() === currentOptions.seed.toString()
-    const sameEnsd = image.options.ensd === currentOptions.ensd
-
     return (
         <div className='spotlight-overlay'>
             <div className='info'>
@@ -140,21 +186,28 @@ export default function Spotlight() {
                 </div>
                 {...fields}
                 <div className="compare-controls row">
+                    <Button onClick={() => onUpscaleClick()}>Upscale</Button>
+                    <Button onClick={() => onInterrogateClick()}>Interrogate</Button>
                     <ClickTwiceButton style='positive' onClickTwice={() => onDeleteBtnClick()}>
                         Delete
                     </ClickTwiceButton>
-                    <Button onClick={() => dispatch(setCompareWithImage(image))}>Stash image as compare image</Button>
-                    {otherImage && <Button onClick={() => dispatch(swapImages())}>Swap</Button>}
+                    <Button onClick={() => dispatch(ImageActions.setCompareWithImage(image))}>Stash image as compare image</Button>
+                    {otherImage && <Button onClick={() => dispatch(ImageActions.swapImages())}>Swap</Button>}
+                </div>
+                <div className="row">
+                    {[0, 1, 2].map(n =>
+                        <Tag type={'t-' + n} dimmed={image.tag !== n} onClick={() => setTag(n)}></Tag>
+                    )}
                 </div>
             </div>
-            <div className="previous" onClick={() => dispatch(selectPrevious(true))}>
+            <div className="previous" onClick={() => dispatch(ImageActions.selectPrevious(true))}>
                 <svg viewBox="0 0 500 500" className="triangle">
                     <polygon points="0,250 500,0 500,500" />
                     Sorry, your browser does not support inline SVG.
                 </svg>
             </div>
-            <img alt={image.name} src={'/myapi/img/' + image.name} onClick={() => dispatch(setSelectedImage(undefined))} />
-            <div className="next" onClick={() => dispatch(selectNext(true))}>
+            <img alt={image.name} src={url} onClick={() => dispatch(ImageActions.setSelectedImage(undefined))} />
+            <div className="next" onClick={() => dispatch(ImageActions.selectNext(true))}>
                 <svg viewBox="0 0 500 500" className="triangle">
                     <polygon points="0,0 500,250, 0,500" />
                     Sorry, your browser does not support inline SVG.
@@ -168,6 +221,7 @@ interface TokenDef {
     token: string
     weight: number
 }
+/*
 function parsePrompt(prompt: string): TokenDef[] {
     // Contributed by ChatGPT
     const regex = /\((.*?)\)/g;
@@ -195,6 +249,54 @@ function parsePrompt(prompt: string): TokenDef[] {
     })
     tokensWithIndexes.sort((a, b) => a.index - b.index)
     return tokensWithIndexes
+}
+*/
+
+function parsePrompt(prompt: string): TokenDef[] {
+    const ignore = () => { }
+    const result = []
+    let loraDef = false
+    let currentToken = ''
+    let parenthesis = 0
+    let isWeightDef = false
+    let currentWeightDef = ''
+    for (const c of prompt) {
+        if (c === '<') {
+            loraDef = true;
+            currentToken += c;
+            continue
+        }
+        if (c === '>') {
+            loraDef = false;
+            currentToken += c;
+            result.push(currentToken)
+            currentToken = '';
+            continue
+        }
+        if (loraDef) continue
+        if (c === '(') parenthesis += 1
+        if (c === ')') parenthesis -= 1
+        if (c === ')' && isWeightDef) isWeightDef = false
+        if (c === ',' && !parenthesis) {
+            result.push(currentToken)
+            currentToken = ''
+            continue
+        }
+        if (c === ':' && !parenthesis) ignore() // throw new Error('Unexpected colon after ' + currentToken + '\n' + prompt)
+        if (c === ':' && isWeightDef) throw new Error('Double colon after ' + currentToken + '\nCurrent prompt:\n' + prompt)
+        if (c === ':' && parenthesis) {
+            isWeightDef = true;
+            continue
+        }
+        if ((c === '0' || c === '1') && isWeightDef) { currentWeightDef += c }
+        if (c === '.' && isWeightDef) { currentWeightDef += c }
+        if (['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'].includes(c)) { currentWeightDef += c }
+        currentToken += c
+    }
+
+    if (currentToken && currentToken !== ' ' && currentToken !== ',') result.push(currentToken)
+
+    return result.map(r => ({ token: r, weight: 1 }))
 }
 
 function imageSizeString(i: Txt2ImgResult): string {

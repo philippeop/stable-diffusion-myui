@@ -1,18 +1,16 @@
 'use client';
-import { configureStore, ThunkAction, Action, isAnyOf, createListenerMiddleware, TypedStartListening, addListener, TypedAddListener } from "@reduxjs/toolkit";
+import { configureStore, ThunkAction, Action, isAnyOf, createListenerMiddleware, TypedStartListening, addListener, TypedAddListener, createAsyncThunk } from "@reduxjs/toolkit";
 import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
 
 import { Logger } from '@/common/logger';
-import {
-    optionsSlice,
-    loadBaseOptions, saveBaseOptions, saveModelOptions, setBatches, setCfgScale, setClipSkip, setEnsd, setImageHeight, setImageWidth, setModel, setNegative, setPrompt,
-    setRestoreFaces, setSampler, setSeed, setSteps, setUpscaler, setUpscalerDenoise, setUpscalerScale, setUpscalerSteps
-} from "./options.slice";
-import { default_images, imagesSlice, loadFilters, saveFilters, setModelFilter, setNewestFirst, setPromptFilter } from "./images.slice";
-import { workerSlice } from "./worker.slice";
+import { optionsSlice, loadOptions, saveOptions, OptionActions } from "./options.slice";
+import { default_images, imagesSlice, loadFilters, saveFilters, ImageActions } from "./images.slice";
+import { appSlice } from "./app.slice";
 import { default_options } from '@/common/models/option.models';
+import { MyApi } from '@/services/myapi.service';
+import { SdApi } from '@/services/sdapi.service';
 
-export type AppStartListening = TypedStartListening<AppState, AppDispatch>
+export type AppStartListening = TypedStartListening<RootState, RootDispatch>
 const listenerMiddleware = createListenerMiddleware()
 const listening = listenerMiddleware.startListening as AppStartListening
 
@@ -21,30 +19,31 @@ const makeStore = () =>
         reducer: {
             [optionsSlice.name]: optionsSlice.reducer,
             [imagesSlice.name]: imagesSlice.reducer,
-            [workerSlice.name]: workerSlice.reducer,
+            [appSlice.name]: appSlice.reducer,
         },
         preloadedState: loadFromStore(),
         middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(listenerMiddleware.middleware),
         devTools: true,
     });
 export const store = makeStore()
-export type AppStore = ReturnType<typeof makeStore>;
-export type AppState = ReturnType<typeof store.getState>;
-export type AppDispatch = typeof store.dispatch;
-export type AppThunk<ReturnType = void> = ThunkAction<
+export type RootStore = ReturnType<typeof makeStore>;
+export type RootState = ReturnType<typeof store.getState>;
+export type RootDispatch = typeof store.dispatch;
+export type RootThunk<ReturnType = void> = ThunkAction<
     ReturnType,
-    AppState,
+    RootState,
     unknown,
     Action
 >;
 
-type DispatchFunc = () => AppDispatch
+type DispatchFunc = () => RootDispatch
 export const useAppDispatch: DispatchFunc = useDispatch
-export const useAppSelector: TypedUseSelectorHook<AppState> = useSelector
+export const useRootSelector: TypedUseSelectorHook<RootState> = useSelector
 
 function loadFromStore() {
     return {
-        options: { ...default_options, ...loadBaseOptions() },
+        //app: { batches: 1, samplerOptions: [] },
+        options: { ...default_options },
         images: { ...default_images, ...loadFilters() }
     }
     //  as {
@@ -55,7 +54,11 @@ function loadFromStore() {
 }
 
 listening({
-    matcher: isAnyOf(setModelFilter, setNewestFirst, setPromptFilter),
+    matcher: isAnyOf(
+        ImageActions.setModelFilter, 
+        ImageActions.setNewestFirst, 
+        ImageActions.setPromptFilter, 
+        ImageActions.setSamplerOptions),
     effect: (action, api) => {
         saveFilters(api.getState().images)
     }
@@ -63,31 +66,25 @@ listening({
 
 listening({
     matcher: isAnyOf(
-        setPrompt, setNegative,
-        setCfgScale,
-        setUpscaler,
-        setUpscalerScale,
-        setUpscalerSteps,
-        setUpscalerDenoise,
-        setSampler,
-        setSteps,
-        setClipSkip,),
+        OptionActions.setModel,
+        OptionActions.setImageWidth, OptionActions.setImageHeight,
+        OptionActions.setPrompt, OptionActions.setNegative,
+        OptionActions.setCfgScale,
+        OptionActions.setUpscaler,
+        OptionActions.setUpscalerScale,
+        OptionActions.setUpscalerSteps,
+        OptionActions.setUpscalerDenoise,
+        OptionActions.setSampler,
+        OptionActions.setSteps,
+        OptionActions.setClipSkip,
+        OptionActions.setSeed, OptionActions.setEnsd,
+        OptionActions.setRestoreFaces),
     effect: (action, api) => {
         const options = api.getState().options
-        saveModelOptions(options.model, options)
-    }
-})
-
-listening({
-    matcher: isAnyOf(
-        setModel,
-        setImageWidth, setImageHeight,
-        setBatches,
-        setSeed, setEnsd,
-        setRestoreFaces),
-    effect: (action, api) => {
-        saveBaseOptions(api.getState().options)
-    }
+        // saveModelOptions(options.model, options)
+        saveOptions('all', options)
+        MyApi.saveSettings(options)
+    } 
 })
 
 export function localstorageLoad<T>(key: string, defaultObj: T): T {
@@ -114,3 +111,13 @@ export function localstorageSave(key: string, obj: any) {
         // ignore write errors
     }
 }
+
+export const getSettings = createAsyncThunk('options/getSettings', async (args, thunkApi) => {
+    const settings = await MyApi.getSettings()
+    if(!settings) return
+    const models = await SdApi.getModels()
+    if(!models) return
+    const model = models.find(m => m.model_name == settings.txt2img_options.model)
+    if(model) await SdApi.setModel(model)
+    thunkApi.dispatch(OptionActions.setSettings(settings))
+})

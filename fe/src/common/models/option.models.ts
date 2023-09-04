@@ -1,50 +1,60 @@
-
-export interface BaseMyUiOptions {
-    model?: string
-    image_width: number
-    image_height: number
-    batches?: number
-    /** SEED INPUT NOT RESULT SEED */
-    seed: number
-    ensd: number
-    restore_faces: boolean
+export interface SavedSettings {
+    txt2img_options: Txt2ImgOptions
 }
 
-export interface ModelMyUiOptions {
+export interface Txt2ImgOptions {
+    [x: string]: any;
+    model: string
+    image_width: number
+    image_height: number
+    
     prompt: string;
     negative: string;
     cfg_scale: number;
+    
+    sampler: string | undefined;
+    steps: number;
+    
+    clip_skip: number;
+    seed: number /** SEED INPUT NOT RESULT SEED */
+    ensd: number
+    
+    restore_faces: boolean
+    
+    upscale: boolean
     upscaler: string | undefined;
     upscaler_scale: number;
     upscaler_steps: number;
     upscaler_denoise: number;
-    sampler: string | undefined;
-    steps: number;
-    clip_skip: number;
 }
 
-export interface MyUiOptions extends BaseMyUiOptions, ModelMyUiOptions {
-    [key: string]: string | number | boolean | undefined;
+export interface UiOptions {
+    batches: number
+    samplerOptions: string[],
+}
+
+export interface DictionaryInterface {
+    [key: string]: string | number | boolean | undefined | string[];
  }
 
-export const default_options: MyUiOptions = {
-    model: undefined,
+export const default_options: Txt2ImgOptions = {
+    model: 'None',
     prompt: '',
     negative: '',
     cfg_scale: 7,
-    sampler: 'DPM++ 2M Karras',
+    sampler: 'DPM++ 2M SDE Karras',
     steps: 30,
+    upscale: false,
     upscaler: 'None',
     upscaler_scale: 2.5,
     upscaler_steps: 12,
     upscaler_denoise: 0.3,
     image_width: 512,
     image_height: 768,
-    batches: 1,
     clip_skip: 2,
     seed: -1,
     ensd: 0,
-    restore_faces: false
+    restore_faces: false,
 }
 export interface SdApiOptions {
     samples_save: boolean

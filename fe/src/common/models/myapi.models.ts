@@ -1,8 +1,8 @@
-import { MyUiOptions } from './option.models'
+import { Txt2ImgOptions } from './option.models'
 
 export interface Txt2ImgResult {
     name: string
-    options: MyUiOptions
+    options: Txt2ImgOptions
     timestamp: string
     /** REAL SEED */
     seed: number
@@ -11,7 +11,7 @@ export interface Txt2ImgResult {
 
 export interface BackendStatus {
     running: boolean
-    tasks: number
+    tasks: string[]
     progress?: number
     started?: string
     skipped?: boolean

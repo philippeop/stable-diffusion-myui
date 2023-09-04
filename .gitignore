@@ -8,3 +8,5 @@ cache/
 *.pem
 
 *.safetensors
+
+be/db.settings.json

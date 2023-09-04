@@ -16,16 +16,12 @@ export class MessagingService {
         this.send('info', msg)
     }
 
-    public sendTxt2ImgNewImage(count: number, total: number) {
-        this.send('txt2img', `Finished Txt2Img ${count} of ${total}`)
+    public sendTxt2ImgNewImage(count: number, total: number, model: string) {
+        this.send('txt2img', { count, total, model })
     }
 
     public sendTxt2ImgError(error: string) {
         this.send('error', error)
-    }
-
-    public sendTxt2ImgDone() {
-        this.send('txt2img', 'Done')
     }
 
     public sendImageDelete(name: string) {
@@ -36,8 +32,8 @@ export class MessagingService {
         this.send('tagged', { name, type })
     }
 
-    public sendProgress(progress: BackendStatus) {
-        this.send('progress', progress)
+    public sendStatus(status: BackendStatus) {
+        this.send('progress', status)
     }
 
     public send(type: string, data: unknown) {
