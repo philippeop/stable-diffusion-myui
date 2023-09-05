@@ -176,7 +176,8 @@ export class Actions {
             options: meta.options,
             timestamp: meta.timestamp,
             seed: meta.seed,
-            tag: meta.tag
+            tag: meta.tag,
+            timeTaken: meta.timeTaken
         }
     }
 }

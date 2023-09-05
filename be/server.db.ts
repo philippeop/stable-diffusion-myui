@@ -14,6 +14,7 @@ export interface ImageMetadata {
     name: string
     timestamp: string // YYYYMMDDhhmmss
     seed: number
+    timeTaken?: number
     options: Txt2ImgOptions
     original_parameters: Txt2ImgParameters
     original_info: Txt2ImgInfo
@@ -62,13 +63,14 @@ export class MyUiDb {
         return this.db.data.images
     }
 
-    async createImage(imageData: string, options: Txt2ImgOptions, params: Txt2ImgParameters, info: string) {
+    async createImage(imageData: string, options: Txt2ImgOptions, params: Txt2ImgParameters, info: string, timeTaken: number) {
         const name = this.saveImage(imageData)
         const original_info = this.convertAndFilterInfo(info)
         this.db.data.images.push({
             name,
             options,
             seed: original_info.seed,
+            timeTaken,
             timestamp: original_info.job_timestamp,
             original_parameters: params,
             original_info,

@@ -22,11 +22,11 @@ export class Txt2Img {
         if(!request) return
 
         Logger.debug(`Doing single image`)
-        const data = await this.internalTxt2Img(request)
+        const { data, timeTaken } = await this.internalTxt2Img(request)
         if(!data) return
 
         Logger.debug(`Got ${data.images.length} image for single txt2img, processing`)
-        this.saveResult(data, options)
+        this.saveResult(data, options, timeTaken)
         this.msgg.sendTxt2ImgNewImage(1, count, options.model)
     }
 
@@ -42,7 +42,8 @@ export class Txt2Img {
 
     private internalTxt2Img = async (request: Txt2ImgRequest) => {
         if (request.n_iter !== 1) Logger.error('oneTxt2Img should be 1 iteration')
-        let data: Txt2ImgResponse | undefined;
+        let  data = undefined
+        const start = new Date().getTime();
         try {
             const response = await fetch(`${WEBUI_URL}/sdapi/v1/txt2img`, {
                 method: 'post',
@@ -55,7 +56,6 @@ export class Txt2Img {
                 if (!data || !data.images) {
                     Logger.warn('Txt2Img didnt result in images, probably ran out of memory')
                     this.msgg.sendTxt2ImgError('Txt2Img didnt result in images')
-                    return
                 }
             }
             else {
@@ -71,14 +71,15 @@ export class Txt2Img {
             console.log('???')
             Logger.warn('Unable to connect to the A1111 API', e)
         }
-
-        return data
+        const timeTaken = new Date().getTime() - start;
+        return { data, timeTaken }
     }
 
-    private async saveResult(data: Txt2ImgResponse, options: Txt2ImgOptions) {
-        for (const imageData of data.images) {
-            await this.db.createImage(imageData, options, data.parameters, data.info)
+    private async saveResult(data: Txt2ImgResponse, options: Txt2ImgOptions, timeTaken: number) {
+        if(data.images.length > 1) {
+            throw new Error('saveResult: Unexpected amount of images')
         }
+        await this.db.createImage(data.images[0], options, data.parameters, data.info, timeTaken)
     }
 
     private optionsToRequest = (options: Txt2ImgOptions, batches?: number): Txt2ImgRequest => {

@@ -161,7 +161,7 @@ export default function Gallery() {
             'nonscaled': !isUpscaled,
             'upscaled': isUpscaled,
         })
-        const title = `Model: ${i.options.model}, upscaler: ${i.options.upscaler}`
+        const title = `Model: ${i.options.model}, upscaler: ${i.options.upscaler}, T=${(i.timeTaken? Math.round(i.timeTaken/1000) : '?')}s`
 
         return (
             <div key={i.name} className={classes} style={{width: galleryItemWidth}} title={title} draggable={true} onDragStart={(e) => dragStartHandler(e, i.name)} onDragOver={e => e.preventDefault()} onDrop={(e) => dropHandler(e, i.name)}>
