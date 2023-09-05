@@ -49,7 +49,10 @@ $breakpoint-large: 1600px;
 .options,
 .prompts {
     textarea {
+        font-size: large;
+        font-weight: bolder;
         resize: vertical;
+        background-color: #222;
     }
 }
 
@@ -100,7 +103,6 @@ img {
 .main-controls {
     border-bottom: $divider;
     display: flex;
-    max-height: 30vh;
 
     @media (max-width: $breakpoint-med) {
         flex-direction: column;
@@ -257,11 +259,9 @@ $tagspacing: 0.5em;
         .gallery-item {
             box-sizing: border-box;
             position: relative;
-            width: 10%;
             padding: 5px;
             background-color: white;
             border: 1px solid gray;
-            min-height: 200px;
 
             &.compare {
                 border: 1px solid red;
