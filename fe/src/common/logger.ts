@@ -51,7 +51,7 @@ export class Logger {
 
     /** console.log yellow text */
     static warn(...params: unknown[]): void {
-        console.warn(...this.yellow('[WARN]', ...params));
+        console.log(...this.yellow('[WARN]', ...params));
     }
 
     static pad(str: string, length = 4): string {

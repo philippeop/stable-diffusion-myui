@@ -160,7 +160,7 @@ export default function Options() {
                     <div className="row">
                         <Button className="load-prompt" onClick={() => loadPrompt()}>Load Prompt</Button>
                         <Button className="load-prompt" onClick={() => loadBaseline()}>Load Baseline</Button>
-                        <Button className="load-prompt" onClick={() => refreshModels()}>Refresh</Button>
+                        <Button className="load-prompt" onClick={() => refreshModels()}>Refresh models</Button>
                         <Button className="load-prompt" onClick={() => showModelSampler()}>Model Sampler</Button>
                     </div>
                 </div>
