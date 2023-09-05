@@ -135,7 +135,7 @@ export default function Options() {
                         <input type="checkbox" id="restore_faces" className={"inline-checkbox " + sameClass(restore_faces, last_sent?.restore_faces)} checked={restore_faces} onChange={event => { dispatch(OptionActions.setRestoreFaces(event.currentTarget.checked)) }} />
                     </div>
                 </div >
-                <div className="col">
+                <div className={'col' + (upscale ? ' upscaler-enabled' : '')}>
                     <div>
                         <span>Upscaler:</span>
                         <input type="checkbox" id="upscale" className="inline-checkbox" checked={upscale} title="Enable/disable upscaler" onChange={event => { dispatch(OptionActions.setUpscale(event.currentTarget.checked)) }}></input>

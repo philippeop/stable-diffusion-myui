@@ -156,6 +156,13 @@ img {
         @media (max-width: 1300px) {
             flex-direction: column;
         }
+        .upscaler-enabled {
+            outline: 3px solid red;
+        }
+    }
+
+    .prompts {
+        margin-top: 3px;
     }
 
     .load-prompt {
