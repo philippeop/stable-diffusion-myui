@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useRef, useCallback, FormEvent, Fragment } from 'react'
+import { useEffect, useState, useRef, useCallback, Fragment } from 'react'
 import classNames from 'classnames'
 
 import { Logger } from '@common/logger'
@@ -7,10 +7,7 @@ import { MyApi } from '../services/myapi.service'
 import { Txt2ImgResult } from '@common/models/myapi.models'
 import { useAppDispatch, useRootSelector } from '../store/store'
 import { ImageActions, refreshImages } from '../store/images.slice'
-import { SdApi } from '@/services/sdapi.service';
-import { Model } from '@/common/models/sdapi.models';
 import { ClickTwice } from './clicktwice';
-import { OptionActions } from '@/store/options.slice';
 import { AppActions } from '@/store/app.slice';
 import Tag from './tag';
 
@@ -36,6 +33,7 @@ export default function Gallery() {
     const [isSlideshow, setIsSlideshow] = useState<boolean>(false)
     const timerHandle = useRef<NodeJS.Timer>()
     const [modelsForFilter, setModelsForFilter] = useState<FilterModel[]>([])
+    const imagesPerRow = useRootSelector(s => s.images.imagesPerRow)
 
     // Get list of models from images + known models 
     useEffect(() => {
@@ -75,6 +73,7 @@ export default function Gallery() {
             clearInterval(timerHandle.current)
         }
     }, [dispatch, isSlideshow])
+    
     // Slideshow stop on unselect image
     useEffect(() => {
         if (!selectedImage) setIsSlideshow(false)
@@ -147,6 +146,7 @@ export default function Gallery() {
         else dispatch(ImageActions.setTagsToHide([tag, ...tagsToHide]))
     }, [dispatch, tagsToHide])
 
+    const galleryItemWidth = `${100 / imagesPerRow}%`
     const galleryItems = (images).map((i, idx) => {
         const url = '/myapi/img/' + i.name
         const classes = classNames({
@@ -161,9 +161,10 @@ export default function Gallery() {
             'nonscaled': !isUpscaled,
             'upscaled': isUpscaled,
         })
+        const title = `Model: ${i.options.model}, upscaler: ${i.options.upscaler}`
 
         return (
-            <div key={i.name} className={classes} draggable={true} onDragStart={(e) => dragStartHandler(e, i.name)} onDragOver={e => e.preventDefault()} onDrop={(e) => dropHandler(e, i.name)}>
+            <div key={i.name} className={classes} style={{width: galleryItemWidth}} title={title} draggable={true} onDragStart={(e) => dragStartHandler(e, i.name)} onDragOver={e => e.preventDefault()} onDrop={(e) => dropHandler(e, i.name)}>
 
                 <Tag type={'t-' + i.tag} title={`Change highlight.\nPress twice.`}>
                     <ClickTwice onClickTwice={() => tagImage(i)} ></ClickTwice>
@@ -212,6 +213,7 @@ export default function Gallery() {
                         )}
                     </div>
                 </div>
+                <input type="number" name="imagesPerRow" value={imagesPerRow} onChange={e => dispatch(ImageActions.setImagesPerRow(+e.currentTarget.value))}></input>
                 <div className="button btn-slideshow" onClick={slideshow} title="Slideshow. Click on image to stop.">▶</div>
             </div>
             <div className="gallery-container">

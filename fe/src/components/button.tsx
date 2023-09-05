@@ -5,16 +5,17 @@ import { PropsWithChildren } from 'react'
 interface ButtonProps extends PropsWithChildren {
     id?: string
     className?: string
+    title?: string
     onClick?: () => void
 }
 export default function Button(props: ButtonProps) {
-    const { id, className, children, onClick } = props
+    const { id, className, title, children, onClick } = props
     const classes = classNames({
         'button': true,
         [className || '']: !!className
     })
     return (
-        <div className={classes} id={id} onClick={() => onClick && onClick()}>
+        <div className={classes} id={id} title={title} onClick={() => onClick && onClick()}>
             {children}
         </div>
     )

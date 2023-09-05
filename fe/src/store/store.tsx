@@ -55,6 +55,7 @@ function loadFromStore() {
 
 listening({
     matcher: isAnyOf(
+        ImageActions.setImagesPerRow,
         ImageActions.setModelFilter, 
         ImageActions.setNewestFirst, 
         ImageActions.setPromptFilter, 

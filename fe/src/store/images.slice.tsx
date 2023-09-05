@@ -6,12 +6,14 @@ import { MyApi } from "@/services/myapi.service";
 import { localstorageLoad, localstorageSave } from './store';
 
 export interface FilterStore {
+    imagesPerRow: number
     modelNameFilter: string
     newestFirst: boolean
     promptFilter?: string
     samplerOptions: string[]
 }
 const default_filter: FilterStore = {
+    imagesPerRow: 10,
     modelNameFilter: 'all',
     newestFirst: false,
     samplerOptions: []
@@ -41,6 +43,9 @@ export const imagesSlice = createSlice({
     name: 'images',
     initialState: default_images,
     reducers: {
+        setImagesPerRow(state, action) {
+            state.imagesPerRow = action.payload
+        },
         setImages(state, action) {
             const images = action.payload as Txt2ImgResult[];
             state.list = images
@@ -155,6 +160,7 @@ function createFilteredList(state: ImageStore): Txt2ImgResult[] {
 
 export function saveFilters(state: ImageStore): void {
     const obj: FilterStore = {
+        imagesPerRow: state.imagesPerRow,
         modelNameFilter: state.modelNameFilter,
         newestFirst: state.newestFirst,
         samplerOptions: state.samplerOptions,
