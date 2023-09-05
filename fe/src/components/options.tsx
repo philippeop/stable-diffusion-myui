@@ -100,12 +100,10 @@ export default function Options() {
     return (
         <fieldset className="options-container" disabled={disabled}>
             {!models && !samplers && <h3>Web UI API appears to be unavailable</h3>}
-            <div className="row">
-            </div>
             <div className="row options">
                 <div className="col">
-                    <label htmlFor="model_select">Model</label>
-                    <select className="form-control" id="model_select" value={model} onChange={onModelChanged}>
+                    <label htmlFor="model">Model</label>
+                    <select className="form-control" id="model" value={model} onChange={onModelChanged}>
                         <option key={-1} value="">None</option>
                         {models.map((m, idx) => <option key={idx} value={m.model_name}>{m.model_name}</option>)}
                     </select>

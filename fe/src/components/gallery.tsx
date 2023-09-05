@@ -206,10 +206,10 @@ export default function Gallery() {
                     <input type="text" id="prompt_filter" value={promptFilter} onChange={e => dispatch(ImageActions.setPromptFilter(e.currentTarget.value))}></input>
                 </div>
                 <div>
-                    <label htmlFor="tagfilters">Filter by tag:</label>
+                    <label>Filter by tag:</label>
                     <div id="tagfilters">
                         {[0, 1, 2].map(n =>
-                            <Tag type={'t-' + n} dimmed={tagsToHide.includes(n)} onClick={() => toggleTag(n)}></Tag>
+                            <Tag key={n} type={'t-' + n} dimmed={tagsToHide.includes(n)} onClick={() => toggleTag(n)}></Tag>
                         )}
                     </div>
                 </div>
