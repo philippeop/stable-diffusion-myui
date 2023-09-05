@@ -1,4 +1,6 @@
 import fetch from 'node-fetch';
+import fs from 'fs/promises';
+import { Express, Request, Response } from 'express';
 
 import { Progress } from "./../fe/src/common/models/sdapi.models.js"
 import { Worker } from './server.worker.js'
@@ -11,11 +13,12 @@ export class ProgressPooler {
     worker: Worker
     msgs: MessagingService
     intervalTimer?: NodeJS.Timer
-    lastImage = ''
+    lastImage?: Buffer
 
-    constructor(worker: Worker, msgs: MessagingService) {
+    constructor(app: Express, worker: Worker, msgs: MessagingService) {
         this.worker = worker
         this.msgs = msgs
+        app.get('/myapi/progress/image', this.getProgressImage)
     }
 
     public start = () => {
@@ -54,12 +57,29 @@ export class ProgressPooler {
         const progress = await this.getProgress()
         if(!progress) return status
         status.running = this.worker.running
-        status.tasks = this.worker.tasks.map(t => t.title),
-        status.progress = Math.round(progress.progress * 100),
-        status.started = progress.state.job_timestamp,
-        status.skipped = progress.state.skipped || progress.state.interrupted,
-        status.image = (this.lastImage === progress.current_image) ? 'same' : progress.current_image
-        this.lastImage = progress.current_image
+        status.tasks = this.worker.tasks.map(t => t.title)
+        status.progress = Math.round(progress.progress * 100)
+        status.started = progress.state.job_timestamp
+        status.skipped = progress.state.skipped || progress.state.interrupted
+        if(progress.current_image) {
+            const currentImageBuffer = Buffer.from(progress.current_image, 'base64')
+            const same = this.lastImage && currentImageBuffer.compare(this.lastImage) === 0
+            this.lastImage = currentImageBuffer
+            status.refreshImage = same
+        }
         return status
+    }
+
+    private getProgressImage = async (req: Request, res: Response) => {
+        Logger.debug('getProgressImage')
+        const path = `./imgs/progress.png`
+        try {
+            res.set('Content-Type', 'image/png')
+            res.set('Content-Length', this.lastImage ? this.lastImage.length.toString() : '0')
+            res.status(200).send(this.lastImage)
+        }
+        catch {
+            res.status(500).send({ message: 'Progress image not found ' + path })
+        }
     }
 }

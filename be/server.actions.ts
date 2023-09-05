@@ -1,6 +1,6 @@
 import fs from 'fs'
 import fetch from 'node-fetch';
-import { Request, Response } from 'express';
+import { Express, Request, Response } from 'express';
 import { WebSocketServer } from 'ws';
 
 import { ImageMetadata, MyUiDb } from './server.db.js'
@@ -24,7 +24,7 @@ export class Actions {
     txt2img: Txt2Img
     progressPooler: ProgressPooler
 
-    constructor(wss: WebSocketServer) {
+    constructor(app: Express, wss: WebSocketServer) {
         this.db = new MyUiDb()
         this.msgs = new MessagingService(wss)
         this.worker = new Worker()
@@ -33,7 +33,7 @@ export class Actions {
         }
         //this.worker.onLast = async () => this.msgg.sendTxt2ImgDone()
         this.txt2img = new Txt2Img(this.db, this.msgs)
-        this.progressPooler = new ProgressPooler(this.worker, this.msgs);
+        this.progressPooler = new ProgressPooler(app, this.worker, this.msgs);
         this.progressPooler.start()
     }
 

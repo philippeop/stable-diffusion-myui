@@ -15,5 +15,5 @@ export interface BackendStatus {
     progress?: number
     started?: string
     skipped?: boolean
-    image?: string
+    refreshImage?: boolean
   }

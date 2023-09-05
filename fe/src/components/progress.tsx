@@ -1,5 +1,5 @@
 'use client';
-import { Fragment, useEffect, useState } from "react"
+import { Fragment, useEffect, useRef, useState } from "react"
 import useWebSocket, { ReadyState } from "react-use-websocket";
 
 import { useAppDispatch } from "../store/store"
@@ -19,7 +19,7 @@ export default function GeneratorProgress() {
     Logger.debug('Rendering GeneratorProgress')
     const dispatch = useAppDispatch()
     const [progress, setProgress] = useState<BackendStatus>()
-    const [preview, setPreview] = useState<string>()
+    const progressImageUrlRef = useRef<string | undefined>()
 
     const { lastMessage, readyState } = useWebSocket('ws://localhost:7999/ws', { shouldReconnect: () => true });
 
@@ -44,20 +44,24 @@ export default function GeneratorProgress() {
         else if (data.type === 'progress' && typeof data.data === 'object') {
             const newProgress = data.data as BackendStatus
             setProgress(newProgress)
-            if (!newProgress.image) setPreview(undefined)
-            else if (newProgress.image !== 'same') setPreview('data:image/png;base64,' + newProgress.image)
         }
     }, [dispatch, lastMessage])
 
     const wsStatus = getStatus(readyState)
-    // useEffect(() => {
-    //     Logger.debug('Websocket status changed to', wsStatus)
-    // }, [wsStatus])
 
-    let inner;
-    if (!progress) inner = <></>
-    else if (!progress.running) inner = <span>Idle, {progress.tasks.length} tasks</span>
+    let inner
+    if (!progress) { 
+        inner = <></>
+        progressImageUrlRef.current = undefined
+    }
+    else if (!progress.running) { 
+        inner = <span>Idle, {progress.tasks.length} tasks</span>
+        progressImageUrlRef.current = undefined
+    }
     else {
+        if(progress.refreshImage) {
+            progressImageUrlRef.current = '/myapi/progress/image?progress=' + progress.progress
+        }
         const timeStared = progress.started !== '0' ? moment(progress.started, 'YYYYMMDDHHmmss') : undefined
         const timeTaken = timeStared ? moment().diff(timeStared, 'seconds') : 0
         const progressSection = progress.skipped ? <div>Skipping...</div> : <div>Progress: {progress.progress} %</div>
@@ -71,7 +75,7 @@ export default function GeneratorProgress() {
         )
     }
 
-    return <div className="progress-container" style={{ backgroundImage: `url(${preview})` }}>
+    return <div className="progress-container" style={{ backgroundImage: `url(${progressImageUrlRef.current})` }}>
         <div className="progress-info">
             {wsStatus} {inner}
         </div>

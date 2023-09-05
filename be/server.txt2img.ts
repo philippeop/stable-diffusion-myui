@@ -14,24 +14,6 @@ export class Txt2Img {
         this.db = db
         this.msgg = msgg
     }
-    
-    public deprec_txt2Img = async (options: Txt2ImgOptions, batches = 1) => {
-        Logger.debug('txt2Img')
-        this.msgg.sendNotice(`Started, doing ${batches} generations`)
-        const { request, count } = this.convertOptionsToRequestCount(options)
-        if(!request) return
-
-        for (let i = 0; i < count ; i++) {
-            Logger.debug(`Doing batch ${i + 1} / ${count}`)
-
-            const data = await this.internalTxt2Img(request)
-            if(!data) continue
-
-            Logger.debug(`Got ${data.images.length} images for batch ${i + 1}, processing`)
-            this.saveResult(data, options)
-            this.msgg.sendTxt2ImgNewImage(i + 1, count, options.model)
-        }
-    }
 
     public oneTxt2Img = async (options: Txt2ImgOptions) => {
         Logger.debug('oneTxt2Img')

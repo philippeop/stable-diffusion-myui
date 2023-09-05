@@ -20,7 +20,7 @@ export class Main {
         this.server = http.createServer(this.app)
         this.wss = new WebSocketServer({ server: this.server, path: "/ws" })
         this.wss.on('connection', this.onConnect)
-        this.actions = new Actions(this.wss)
+        this.actions = new Actions(this.app, this.wss)
         this.setupRouting()
         this.server.listen(PORT, HOST, () => {
             Logger.log(`Running on http://${HOST}:${PORT}`)
